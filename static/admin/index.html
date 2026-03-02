@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Menu Admin</title>
+    <link rel="stylesheet" href="./admin.css" />
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="title">Menu Admin</div>
+        <div class="sub" id="meta">Loading…</div>
+    </header>
+
+    <main class="wrap">
+        <section class="panel">
+            <h2>House Taps</h2>
+            <div id="taps" class="list"></div>
+            <h2 style="margin-top:18px;">Guest Taps</h2>
+            <div id="guestTaps" class="list"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panelHead">
+                <h2>Beers</h2>
+                <button class="btn" id="newBeerBtn">+ New Beer</button>
+            </div>
+
+            <div id="beerForm" class="card hidden"></div>
+            <div id="beers" class="list"></div>
+        </section>
+    </main>
+
+    <script src="./admin.js"></script>
+</body>
+
+</html>

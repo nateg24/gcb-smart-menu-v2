@@ -1,0 +1,225 @@
+:root {
+    --bg: #f2f2f2;
+    --text: #0a0a0a;
+    --muted: #444;
+    --gold: #b7ad1e;
+
+    --title-font: Impact, "Arial Black", system-ui, sans-serif;
+    --body-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body-font);
+}
+
+.header {
+    padding: 40px 0 20px; /* Increased top padding for a more balanced look */
+    text-align: center;   /* This centers all inline/text content inside */
+    width: 100%;
+}
+
+.header__title {
+    font-family: var(--title-font);
+    color: var(--gold);
+    font-size: clamp(64px, 6vw, 110px);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1;
+    text-shadow: 0 4px 0 rgba(0, 0, 0, .12);
+    margin: 0 auto;       /* Ensures the block itself is centered */
+}
+
+.header__sub {
+    margin-top: 8px;
+    letter-spacing: 12px;
+    font-size: 14px;
+    text-transform: uppercase;
+    display: block;       /* Forces it to its own line for better centering */
+}
+
+.page {
+    padding: 10px 0 30px;
+}
+
+/* centered canvas so nothing ever hits screen edges */
+.menuCanvas {
+    position: relative;
+    max-width: 1700px;
+    margin: 0 auto;
+    padding: 0 120px;
+    /* Remove any other background-image properties here */
+}
+
+.menuCanvas::after {
+    content: "";
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 600px;  /* Adjust this width as needed */
+    height: 500px; /* Adjust this height as needed */
+    background-image: url("/static/assets/detailed-green.png");
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-size: contain;
+    /* Controlled Opacity */
+    opacity: 0.2; /* 40% semi-transparent */
+    z-index: -1; 
+    pointer-events: none; 
+    margin-bottom: 20px;
+    margin-right: 20px;
+}
+
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 70px;
+    align-items: start;
+}
+
+.col {
+    min-width: 0;
+}
+
+.section {
+    margin-bottom: 26px;
+}
+
+.sectionTitle {
+    font-family: var(--title-font);
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 42px;
+    margin: 16px 0 10px;
+    margin-top: 18px;
+}
+
+#flightsRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid var(--gold); /* Adds a nice separation line */
+}
+
+.flightRow .left {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.flightRow .label {
+    font-family: var(--title-font);
+    text-transform: uppercase;
+    font-size: 26px;
+    letter-spacing: 1px;
+}
+
+.flightRow .desc {
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.flightRow .price {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.item {
+    margin-bottom: 18px;
+}
+
+.itemTop {
+    display: grid;
+    grid-template-columns: 1fr 40px;
+    /* price column */
+    gap: 14px;
+    align-items: baseline;
+}
+
+.name {
+    font-family: var(--title-font);
+    font-size: 28px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.05;
+}
+
+.price {
+    text-align: right;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.desc {
+    margin-top: 4px;
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.25;
+}
+
+.meta {
+    margin-top: 16px;
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+}
+
+/* HARD boundary so content never reaches screen edges */
+.menuCanvas {
+    max-width: 1700px;
+    margin: 0 auto;
+    padding: 0 120px;
+    /* safe area inside the boundary */
+}
+
+/* make header + page fill the canvas, not the viewport */
+.header,
+.page {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.menuCanvas {
+    max-width: 1700px;
+    margin: 0 auto;
+    padding: 0 120px;
+}
+
+.divider {
+    margin: 26px 0 12px;
+}
+
+#guestGrid {
+    margin-bottom: 12px;
+}
+
+/* Smooth swap animation */
+.fadeSwap {
+    opacity: 1;
+    transition: opacity 220ms ease-in-out;
+}
+
+.fadeSwap.isFading {
+    opacity: 0;
+}
+
+/* Helps reduce layout jump when content count changes */
+#houseGrid,
+#guestGrid {
+    min-height: 200px;
+    /* tweak based on your typical tap count */
+}

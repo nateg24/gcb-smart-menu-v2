@@ -1,0 +1,41 @@
+:root {
+    --bg: #F4F4F4;
+    --text: #111111;
+    --muted: #555555;
+    --brand-gold: #B5AA0D;
+    --border: rgba(0, 0, 0, .08);
+
+    --font-display: "Beiko", sans-serif;
+    --font-text: "Karla", sans-serif;
+
+    --h1: clamp(40px, 3vw, 72px);
+    --h2: clamp(18px, 1.4vw, 24px);
+    --body: clamp(14px, 1vw, 18px);
+    --small: clamp(12px, .9vw, 14px);
+}
+
+/* Heading font */
+@font-face {
+    font-family: "Beiko";
+    src: url("/static/assets/fonts/Beiko-Heavy.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Body font */
+@font-face {
+    font-family: "Karla";
+    src: url("/static/assets/fonts/Karla-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Karla";
+    src: url("/static/assets/fonts/Karla-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
