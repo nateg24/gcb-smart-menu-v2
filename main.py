@@ -813,10 +813,6 @@ async def bulk_upsert_beers(body: BulkBeersIn):
         db.close()
 
 
-# main.py
-
-
-# main.py - Update the delete_beer route
 @app.delete("/api/beers/{beer_id}")
 async def delete_beer(beer_id: int):
     db = SessionLocal()
@@ -826,9 +822,10 @@ async def delete_beer(beer_id: int):
         if not b:
             raise HTTPException(status_code=404, detail="Beer not found")
 
-        # 2. Unassign this beer from any taps (Required to avoid DB errors)
+        # 2. Clear this beer from any Taps it is currently assigned to
+        # This prevents "Foreign Key" errors that block deletion
         db.query(Tap).filter(Tap.beer_id == beer_id).update({Tap.beer_id: None})
-        db.flush() 
+        db.flush()
 
         # 3. PERMANENTLY remove the beer from the database
         db.delete(b)

@@ -104,13 +104,8 @@ function renderTaps() {
     });
 }
 
+// Replace your current renderBeers and delete logic with this:
 
-// Inside static/admin/admin.js
-
-// Replace the renderBeers function in static/admin/admin.js
-// static/admin/admin.js
-
-// 1. Update the render loop to use the word "Delete"
 function renderBeers() {
     beersEl.innerHTML = beers.map(b => `
     <div class="row" style="grid-template-columns: 1fr 220px;">
@@ -126,29 +121,29 @@ function renderBeers() {
   `).join("");
 }
 
-// 2. Add this ONE listener OUTSIDE of any other functions
-document.getElementById("beers").addEventListener("click", async (e) => {
-    // Check if the clicked element (or its parent) is the delete button
+// Add this ONE listener at the bottom of your admin.js file
+beersEl.addEventListener("click", async (e) => {
     const deleteBtn = e.target.closest("[data-del]");
-
     if (deleteBtn) {
         const id = deleteBtn.getAttribute("data-del");
 
-        // This confirmation MUST appear now
-        if (!confirm("Permanently delete this beer from the database?")) return;
+        // This confirmation MUST pop up now
+        if (!confirm("Are you sure? This PERMANENTLY removes the beer from the database.")) return;
 
         try {
-            console.log("Sending DELETE for ID:", id);
-            const res = await api(`/api/beers/${id}`, { method: "DELETE" });
-
-            if (res.ok || res) {
-                console.log("Delete successful. Refreshing UI...");
-                await loadAll(); // Re-fetches the list from the server
-            }
+            // Trigger the DELETE route
+            await api(`/api/beers/${id}`, { method: "DELETE" });
+            // Re-fetch the list (the beer will be gone from the DB response now)
+            await loadAll();
         } catch (err) {
-            console.error("Delete failed:", err);
             alert("Error: " + err.message);
         }
+    }
+
+    // Also handle the edit button here for reliability
+    const editBtn = e.target.closest("[data-edit]");
+    if (editBtn) {
+        openBeerForm(Number(editBtn.getAttribute("data-edit")));
     }
 });
 
