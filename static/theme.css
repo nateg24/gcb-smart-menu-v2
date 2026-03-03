@@ -17,7 +17,7 @@
 /* Heading font */
 @font-face {
     font-family: "Beiko";
-    src: url("/static/assets/fonts/Beiko-Heavy.ttf") format("truetype");
+    src: url("/static/assets/beiko-heavy.ttf") format("truetype");
     font-weight: 800;
     font-style: normal;
     font-display: swap;
@@ -26,7 +26,7 @@
 /* Body font */
 @font-face {
     font-family: "Karla";
-    src: url("/static/assets/fonts/Karla-Regular.ttf") format("truetype");
+    src: url("/static/assets/Karla-Regular.ttf") format("truetype");
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -34,7 +34,7 @@
 
 @font-face {
     font-family: "Karla";
-    src: url("/static/assets/fonts/Karla-Bold.ttf") format("truetype");
+    src: url("/static/assets/Karla-Bold.ttf") format("truetype");
     font-weight: 700;
     font-style: normal;
     font-display: swap;

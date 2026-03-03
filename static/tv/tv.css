@@ -1,11 +1,20 @@
+@import url("/static/theme.css");
+
+
+/* Updated :root section */
 :root {
     --bg: #f2f2f2;
     --text: #0a0a0a;
     --muted: #444;
     --gold: #b7ad1e;
 
-    --title-font: Impact, "Arial Black", system-ui, sans-serif;
-    --body-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    /* These must match the 'font-family' names in your theme.css @font-face rules */
+    --header-font: "Beiko", Impact, "Arial Black", sans-serif;
+    --header-sub-font: "Karla", system-ui, sans-serif;
+
+    /* Used for other menu elements */
+    --title-font: "Beiko", Impact, "Arial Black", sans-serif;
+    --body-font: "Karla", system-ui, sans-serif;
 }
 
 * {
@@ -20,28 +29,36 @@ body {
 }
 
 .header {
-    padding: 40px 0 20px; /* Increased top padding for a more balanced look */
-    text-align: center;   /* This centers all inline/text content inside */
+    padding: 40px 0 20px;
+    text-align: center;
     width: 100%;
 }
 
 .header__title {
-    font-family: var(--title-font);
-    color: var(--gold);
-    font-size: clamp(64px, 6vw, 110px);
-    letter-spacing: 2px;
+    font-family: var(--header-font);
+    font-weight: 800;
+    /* This triggers the Beiko-Heavy.ttf file */
+
+    /* Letter spacing and scaling to match your reference image */
+    letter-spacing: -3px;
+    transform: scaleX(0.9);
+    display: inline-block;
+
+    color: #b7ad1e;
+    text-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+
+    font-size: clamp(64px, 8vw, 110px);
+    line-height: 0.9;
     text-transform: uppercase;
-    line-height: 1;
-    text-shadow: 0 4px 0 rgba(0, 0, 0, .12);
-    margin: 0 auto;       /* Ensures the block itself is centered */
 }
 
 .header__sub {
-    margin-top: 8px;
-    letter-spacing: 12px;
-    font-size: 14px;
-    text-transform: uppercase;
-    display: block;       /* Forces it to its own line for better centering */
+    font-family: "Karla", sans-serif;
+    letter-spacing: 14px;
+    /* Keep the wide spacing for the subtitle */
+    font-weight: 700;
+    margin-top: -5px;
+    /* Pull it closer to the main title */
 }
 
 .page {
@@ -62,16 +79,19 @@ body {
     position: fixed;
     bottom: 0;
     right: 0;
-    width: 600px;  /* Adjust this width as needed */
-    height: 500px; /* Adjust this height as needed */
+    width: 600px;
+    /* Adjust this width as needed */
+    height: 500px;
+    /* Adjust this height as needed */
     background-image: url("/static/assets/detailed-green.png");
     background-repeat: no-repeat;
     background-position: bottom right;
     background-size: contain;
     /* Controlled Opacity */
-    opacity: 0.2; /* 40% semi-transparent */
-    z-index: -1; 
-    pointer-events: none; 
+    opacity: 0.2;
+    /* 40% semi-transparent */
+    z-index: -1;
+    pointer-events: none;
     margin-bottom: 20px;
     margin-right: 20px;
 }
@@ -109,7 +129,8 @@ body {
     gap: 14px;
     margin-top: 40px;
     padding-top: 20px;
-    border-top: 2px solid var(--gold); /* Adds a nice separation line */
+    border-top: 2px solid var(--gold);
+    /* Adds a nice separation line */
 }
 
 .flightRow .left {
