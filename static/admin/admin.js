@@ -59,13 +59,8 @@ function renderTaps() {
           </select>
           <div class="small">Assign beer to this tap</div>
         </div>
-
-        <div class="controls">
-          <button class="btn on" data-tap-status="${t.id}" data-status="ON">ON</button>
-          <button class="btn out" data-tap-status="${t.id}" data-status="OUT">OUT</button>
-          <button class="btn" data-tap-status="${t.id}" data-status="COMING_SOON">COMING SOON</button>
+        
         </div>
-      </div>
     `;
     };
 
@@ -92,7 +87,6 @@ function renderTaps() {
         });
     });
 
-    // Status listeners
     document.querySelectorAll("[data-tap-status]").forEach(btn => {
         btn.addEventListener("click", async (e) => {
             const tapId = e.target.getAttribute("data-tap-status");
@@ -104,12 +98,9 @@ function renderTaps() {
     });
 }
 
-// Replace your current renderBeers and delete logic with this:
-
 function renderBeers() {
     beersEl.innerHTML = beers.map(b => `
-    <div class="row" style="grid-template-columns: 1fr 220px;">
-      <div>
+    <div class="row"> <div>
         <div class="tapNum">${escapeHtml(beerLabel(b))}</div>
         <div class="small">${escapeHtml([b.style, b.abv ? `${Number(b.abv).toFixed(1)}%` : null, b.price].filter(Boolean).join(" • "))}</div>
       </div>

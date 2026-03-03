@@ -447,32 +447,31 @@ def get_menu():
 
 
 @app.get("/api/beers", response_model=list[BeerOut])
-def list_beers():
+def list_beers(include_inactive: bool = False):
     db = SessionLocal()
     try:
+        q = db.query(Beer)
+        if not include_inactive:
+            q = q.filter(Beer.is_active == 1)
+
         beers = (
-            db.query(Beer)
-            .order_by(Beer.brewery.asc().nullslast(), Beer.name.asc())
-            .all()
+            q.order_by(Beer.brewery.asc().nullslast(), Beer.name.asc())
+             .all()
         )
-        out = []
-        for b in beers:
-            if b.is_active != 1:
-                # still return inactive beers so admins can re-enable them
-                pass
-            out.append(
-                BeerOut(
-                    id=b.id,
-                    name=b.name,
-                    brewery=b.brewery,
-                    style=b.style,
-                    abv=b.abv,
-                    price=b.price,
-                    description=b.description,
-                    category=b.category,
-                )
+
+        return [
+            BeerOut(
+                id=b.id,
+                name=b.name,
+                brewery=b.brewery,
+                style=b.style,
+                abv=b.abv,
+                price=b.price,
+                description=b.description,
+                category=b.category,
             )
-        return out
+            for b in beers
+        ]
     finally:
         db.close()
 

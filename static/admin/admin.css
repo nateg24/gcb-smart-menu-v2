@@ -1,3 +1,8 @@
+/* static/admin/admin.css */
+
+/* IMPORT BRANDING (Beiko, Karla, Gold) */
+@import url("/static/theme.css");
+
 :root {
     --bg: #0b0f14;
     --panel: #0f172a;
@@ -8,47 +13,50 @@
     --accent: #22c55e;
     --danger: #ef4444;
 
+    /* Matching the 'House Taps' radius */
     --radius: 16px;
-    --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    --font: "Karla", system-ui, sans-serif;
 }
 
 * {
-    box-sizing: border-box
+    box-sizing: border-box;
 }
 
 body {
     margin: 0;
     font-family: var(--font);
     background: var(--bg);
-    color: var(--text)
+    color: var(--text);
 }
 
 .topbar {
     padding: 18px 22px;
-    border-bottom: 1px solid var(--border)
+    border-bottom: 1px solid var(--border);
 }
 
 .title {
     font-size: 20px;
-    font-weight: 900
+    font-weight: 900;
 }
 
 .sub {
     margin-top: 6px;
     color: var(--muted);
-    font-size: 13px
+    font-size: 13px;
 }
 
+/* Main Layout Split */
 .wrap {
     padding: 18px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
+    align-items: start;
 }
 
 @media (max-width: 1100px) {
     .wrap {
-        grid-template-columns: 1fr
+        grid-template-columns: 1fr;
     }
 }
 
@@ -63,146 +71,149 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    margin-bottom: 16px;
 }
 
 h2 {
-    margin: 0 0 12px 0;
-    font-size: 16px
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
 }
 
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px
-}
-
+/* SHARED ROW STYLING (The "Look") */
 .row {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px;
     display: grid;
-    grid-template-columns: 90px 1fr 220px;
-    gap: 10px;
+    gap: 16px;
     align-items: center;
+    padding: 14px 18px;
+    background: var(--card);
+    /* Identical background */
+    border: 1px solid var(--border);
+    /* Identical border */
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: background 0.2s ease;
 }
 
-@media (max-width: 700px) {
-    .row {
+.row:hover {
+    background: rgba(255, 255, 255, .06);
+}
+
+/* SPECIFIC POSITIONING (The "Layout") */
+/* House Taps: Name | Dropdown | Status Buttons */
+#taps .row,
+#guestTaps .row {
+    grid-template-columns: 140px 1fr 280px;
+}
+
+/* Beers: Name & Style | Edit & Delete Buttons */
+#beers .row {
+    grid-template-columns: 1fr 220px;
+}
+
+@media (max-width: 900px) {
+
+    #beers .row,
+    #taps .row,
+    #guestTaps .row {
         grid-template-columns: 1fr;
-        gap: 8px
     }
 }
 
+/* TYPOGRAPHY (Branding applied to both columns) */
 .tapNum {
+    font-family: var(--header-font);
+    /* Uses Beiko */
     font-weight: 900;
-    font-size: 16px
+    font-size: 17px;
+    color: var(--gold);
+    /* Both columns now use Gnarly Gold */
+    text-transform: uppercase;
 }
 
 .small {
+    font-family: var(--header-sub-font);
+    /* Uses Karla */
     color: var(--muted);
-    font-size: 12px;
-    margin-top: 4px
+    font-size: 13px;
+    margin-top: 4px;
+    line-height: 1.4;
 }
 
+/* BUTTONS & CONTROLS */
 .controls {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
-    flex-wrap: wrap
 }
 
 .btn {
     border: 1px solid var(--border);
     background: rgba(255, 255, 255, .03);
     color: var(--text);
-    padding: 8px 10px;
-    border-radius: 12px;
-    font-weight: 800;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 700;
     cursor: pointer;
+    font-size: 12px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
 }
 
 .btn:hover {
-    background: rgba(255, 255, 255, .06)
-}
-
-.btn.on {
-    border-color: rgba(34, 197, 94, .45);
-    color: var(--accent)
-}
-
-.btn.out {
-    border-color: rgba(239, 68, 68, .45);
-    color: var(--danger)
+    background: rgba(255, 255, 255, .08);
 }
 
 .btn.primary {
-    border-color: rgba(34, 197, 94, .45)
+    border-color: rgba(34, 197, 94, .45);
+    color: var(--accent);
+}
+
+.btn.on {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn.out {
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 .btn.danger {
-    border-color: rgba(239, 68, 68, .45);
+    border-color: rgba(239, 68, 68, .5);
+    color: var(--danger);
 }
 
+.btn.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* FORMS */
 .select,
 .input,
 .textarea {
     width: 100%;
     padding: 10px;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid var(--border);
     background: rgba(0, 0, 0, .25);
     color: var(--text);
-}
-
-.textarea {
-    min-height: 90px;
-    resize: vertical
-}
-
-.card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px;
-    margin-bottom: 10px;
-}
-
-.hidden {
-    display: none
+    font-family: inherit;
 }
 
 .formGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-@media (max-width: 700px) {
-    .formGrid {
-        grid-template-columns: 1fr;
-    }
+    gap: 12px;
 }
 
 .formActions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     justify-content: flex-end;
-    margin-top: 10px
+    margin-top: 20px;
 }
 
-.btn.danger {
-    border-color: rgba(239, 68, 68, .45);
-    color: #ef4444; /* Bright Red */
-}
-
-.btn.danger:hover {
-    background: rgba(239, 68, 68, 0.1);
-}
-
-.controls {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
+.hidden {
+    display: none;
 }
