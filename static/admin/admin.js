@@ -19,21 +19,14 @@ async function api(path, opts = {}) {
         headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
         ...opts
     });
+
     if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`${opts.method || "GET"} ${path} failed: ${res.status} ${txt}`);
     }
-    // Return json if possible, otherwise text
+
     const ct = res.headers.get("content-type") || "";
     return ct.includes("application/json") ? res.json() : res.text();
-}
-
-async function loadAll() {
-    meta.textContent = "Loading…";
-    [beers, menu] = await Promise.all([api("/api/beers"), api("/api/menu")]);
-    meta.textContent = `Loaded • ${new Date(menu.generated_at).toLocaleTimeString()}`;
-    renderTaps();
-    renderBeers();
 }
 
 function beerLabel(b) {
@@ -41,34 +34,40 @@ function beerLabel(b) {
     return bits || `Beer #${b.id}`;
 }
 
+function renderTapRow(t) {
+    const currentBeerId = (t.beer_id ?? (t.beer ? t.beer.id : ""));
+
+    return `
+    <div class="row tapRow" data-id="${t.id}">
+      <div class="dragHandle tapHandle" title="Drag to reorder">☰</div>
+
+      <div class="tapInfo">
+        <div class="tapNum">Tap ${t.tap_number}</div>
+        <div class="small">${escapeHtml(t.beer ? beerLabel(t.beer) : "No beer assigned")}</div>
+      </div>
+
+      <div class="tapAssign">
+        <select class="select" data-tap-assign="${t.id}">
+          <option value="">-- Empty / Unassigned --</option>
+          ${beers.map(b => `
+            <option value="${b.id}" ${String(b.id) === String(currentBeerId) ? "selected" : ""}>
+              ${escapeHtml(beerLabel(b))}
+            </option>
+          `).join("")}
+        </select>
+        <div class="small">Assign beer to this tap</div>
+      </div>
+    </div>
+  `;
+}
+
+function isGuestTap(t) {
+    const cat = String(t?.beer?.category || "").toUpperCase();
+    return cat === "GUEST" || cat === "CIDER";
+}
 
 function renderTaps() {
-    const renderTapRow = (t) => {
-        const currentBeerId = (t.beer_id ?? (t.beer ? t.beer.id : ""));
-        return `
-      <div class="row">
-        <div>
-          <div class="tapNum">Tap ${t.tap_number}</div>
-          <div class="small">${escapeHtml(t.beer ? beerLabel(t.beer) : "No beer assigned")}</div>
-        </div>
-
-        <div>
-          <select class="select" data-tap-assign="${t.id}">
-            <option value="">-- Empty / Unassigned --</option>
-            ${beers.map(b => `<option value="${b.id}" ${String(b.id) === String(currentBeerId) ? "selected" : ""}>${escapeHtml(beerLabel(b))}</option>`).join("")}
-          </select>
-          <div class="small">Assign beer to this tap</div>
-        </div>
-        
-        </div>
-    `;
-    };
-
-    // If menu endpoint doesn't include beer.category (or beer is inactive), guest split may be empty.
-    const isGuestTap = (t) => {
-        const cat = String(t?.beer?.category || "").toUpperCase();
-        return cat === "GUEST" || cat === "CIDER";
-    };
+    if (!menu || !Array.isArray(menu.taps)) return;
 
     const houseTaps = menu.taps.filter(t => !isGuestTap(t));
     const guestTaps = menu.taps.filter(t => isGuestTap(t));
@@ -76,22 +75,17 @@ function renderTaps() {
     tapsEl.innerHTML = houseTaps.map(renderTapRow).join("");
     if (guestTapsEl) guestTapsEl.innerHTML = guestTaps.map(renderTapRow).join("");
 
-    // Assign listeners (attach to both house + guest containers)
+    // bind tap assign listeners
     document.querySelectorAll("[data-tap-assign]").forEach(sel => {
         sel.addEventListener("change", async (e) => {
             const tapId = e.target.getAttribute("data-tap-assign");
             const beerId = e.target.value ? Number(e.target.value) : null;
-            await api(`/api/taps/${tapId}/assign`, { method: "POST", body: JSON.stringify({ beer_id: beerId }) });
-            menu = await api("/api/menu");
-            renderTaps();
-        });
-    });
 
-    document.querySelectorAll("[data-tap-status]").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-            const tapId = e.target.getAttribute("data-tap-status");
-            const status = e.target.getAttribute("data-status");
-            await api(`/api/taps/${tapId}/status`, { method: "POST", body: JSON.stringify({ status }) });
+            await api(`/api/taps/${tapId}/assign`, {
+                method: "POST",
+                body: JSON.stringify({ beer_id: beerId })
+            });
+
             menu = await api("/api/menu");
             renderTaps();
         });
@@ -100,38 +94,42 @@ function renderTaps() {
 
 function renderBeers() {
     beersEl.innerHTML = beers.map(b => `
-    <div class="row"> <div>
-        <div class="tapNum">${escapeHtml(beerLabel(b))}</div>
-        <div class="small">${escapeHtml([b.style, b.abv ? `${Number(b.abv).toFixed(1)}%` : null, b.price].filter(Boolean).join(" • "))}</div>
+    <div class="beerRow" data-id="${b.id}">
+      <div class="dragHandle" title="Drag to reorder">☰</div>
+
+      <div class="beerMain">
+        <div class="beerName">${escapeHtml(beerLabel(b))}</div>
+        <div class="beerMeta">
+          ${escapeHtml([b.style, b.abv ? `${Number(b.abv).toFixed(1)}%` : null, b.price]
+        .filter(Boolean)
+        .join(" • "))}
+        </div>
       </div>
-      <div class="controls">
-        <button class="btn primary" data-edit="${b.id}">Edit</button>
-        <button class="btn danger" data-del="${b.id}">Delete</button>
+
+      <div class="beerActions">
+        <button type="button" class="btnSmall" data-edit="${b.id}">Edit</button>
+        <button type="button" class="btnSmall danger" data-del="${b.id}">Delete</button>
       </div>
     </div>
   `).join("");
 }
 
-// Add this ONE listener at the bottom of your admin.js file
+// Beer actions: ONE delegated listener
 beersEl.addEventListener("click", async (e) => {
     const deleteBtn = e.target.closest("[data-del]");
     if (deleteBtn) {
         const id = deleteBtn.getAttribute("data-del");
-
-        // This confirmation MUST pop up now
-        if (!confirm("Are you sure? This PERMANENTLY removes the beer from the database.")) return;
+        if (!confirm("Delete this beer permanently? This cannot be undone.")) return;
 
         try {
-            // Trigger the DELETE route
             await api(`/api/beers/${id}`, { method: "DELETE" });
-            // Re-fetch the list (the beer will be gone from the DB response now)
             await loadAll();
         } catch (err) {
             alert("Error: " + err.message);
         }
+        return;
     }
 
-    // Also handle the edit button here for reliability
     const editBtn = e.target.closest("[data-edit]");
     if (editBtn) {
         openBeerForm(Number(editBtn.getAttribute("data-edit")));
@@ -152,13 +150,14 @@ function openBeerForm(beerId = null) {
       <input class="input" id="f_abv" placeholder="ABV (e.g. 6.5)" value="${escapeHtml(b?.abv ?? "")}" />
       <input class="input" id="f_price" placeholder="Price (e.g. $7)" value="${escapeHtml(b?.price || "")}" />
       <select class="select" id="f_category">
-      <option value="CORE" ${cat === "CORE" ? "selected" : ""}>House</option>
-      <option value="GUEST" ${cat === "GUEST" ? "selected" : ""}>Guest</option>
-      <option value="CIDER" ${cat === "CIDER" ? "selected" : ""}>Cider</option>
+        <option value="CORE" ${cat === "CORE" ? "selected" : ""}>House</option>
+        <option value="GUEST" ${cat === "GUEST" ? "selected" : ""}>Guest</option>
+        <option value="CIDER" ${cat === "CIDER" ? "selected" : ""}>Cider</option>
       </select>
-<div class="small">Category</div>
+      <div class="small">Category</div>
       <div></div>
     </div>
+
     <textarea class="textarea" id="f_desc" placeholder="Description (optional)">${escapeHtml(b?.description || "")}</textarea>
 
     <div class="formActions">
@@ -200,7 +199,86 @@ function openBeerForm(beerId = null) {
 
 newBeerBtn.addEventListener("click", () => openBeerForm(null));
 
+let beerSortable = null;
+let tapsSortable = null;
+let guestTapsSortable = null;
+
+function initTapSorting() {
+    const setup = (container) => new Sortable(container, {
+        animation: 150,
+        handle: ".tapHandle",
+        onEnd: async () => {
+            // send full order for ALL taps (house + guest) so display_order stays global
+            const allIds = [
+                ...tapsEl.querySelectorAll(".tapRow"),
+                ...(guestTapsEl ? guestTapsEl.querySelectorAll(".tapRow") : [])
+            ].map(el => Number(el.dataset.id));
+
+            await api("/api/taps/reorder", {
+                method: "POST",
+                body: JSON.stringify({ order: allIds })
+            });
+
+            menu = await api("/api/menu");
+            renderTaps();
+            initTapSorting(); // re-bind after re-render
+        }
+    });
+
+    // Sortable gets destroyed when you re-render, so re-init each time.
+    // Avoid dupes by destroying old ones first.
+    if (tapsSortable) tapsSortable.destroy();
+    tapsSortable = setup(tapsEl);
+
+    if (guestTapsEl) {
+        if (guestTapsSortable) guestTapsSortable.destroy();
+        guestTapsSortable = setup(guestTapsEl);
+    }
+}
+
+function initBeerSorting() {
+    if (beerSortable) return;
+
+    beerSortable = new Sortable(beersEl, {
+        animation: 150,
+        handle: ".dragHandle",
+        onEnd: async () => {
+            const ids = [...beersEl.querySelectorAll(".beerRow")].map(el => Number(el.dataset.id));
+            await api("/api/beers/reorder", {
+                method: "POST",
+                body: JSON.stringify({ order: ids })
+            });
+            await loadAll();
+        }
+    });
+}
+
+async function loadAll() {
+    meta.textContent = "Loading…";
+
+    try {
+        const [beersRes, menuRes] = await Promise.all([
+            api("/api/beers"),
+            api("/api/menu")
+        ]);
+
+        beers = Array.isArray(beersRes) ? beersRes : [];
+        menu = menuRes;
+
+        if (!menu || !Array.isArray(menu.taps)) {
+            console.error("Bad /api/menu response:", menuRes);
+            throw new Error("Bad /api/menu response (expected {taps:[...]})");
+        }
+
+        meta.textContent = `Loaded • ${new Date(menu.generated_at).toLocaleTimeString()}`;
+        renderTaps();
+        renderBeers();
+        initBeerSorting();
+    } catch (e) {
+        console.error(e);
+        meta.textContent = `Error: ${e.message}`;
+    }
+}
+
 // Boot
-loadAll().catch(e => {
-    meta.textContent = `Error: ${e.message}`;
-});
+loadAll();

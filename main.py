@@ -1,11 +1,12 @@
 from __future__ import annotations
-import sqlite3
+
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Set
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy import (
@@ -17,7 +18,9 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     or_,
+    text,
 )
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -28,7 +31,6 @@ app.mount(
     StaticFiles(directory=BASE_DIR / "static", html=True),
     name="static",
 )
-from fastapi.responses import FileResponse
 
 
 @app.get("/tv")
@@ -66,6 +68,7 @@ class Beer(Base):
     description = Column(String, nullable=True)
     category = Column(String, nullable=True, default="CORE")
     is_active = Column(Integer, nullable=False, default=1)
+    display_order = Column(Integer, nullable=False, default=0)
 
 
 class Tap(Base):
@@ -80,6 +83,12 @@ class Tap(Base):
     beer = relationship("Beer")
 
 
+# -------------------------
+# Schemas
+# -------------------------
+ALLOWED_CATEGORIES = {"CORE", "GUEST", "CIDER"}
+
+
 class BeerIn(BaseModel):
     name: str
     brewery: Optional[str] = None
@@ -87,8 +96,9 @@ class BeerIn(BaseModel):
     abv: Optional[float] = None
     price: Optional[str] = None
     description: Optional[str] = None
-    category: Optional[str] = "CORE"  # <-- ADD
+    category: Optional[str] = "CORE"
     is_active: bool = True
+    display_order: Optional[int] = None
 
 
 class BeerUpdate(BaseModel):
@@ -100,46 +110,7 @@ class BeerUpdate(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     is_active: Optional[bool] = None
-
-
-Base.metadata.create_all(bind=engine)
-
-
-# -------------------------
-# Realtime: WS hub
-# -------------------------
-class MenuHub:
-    def __init__(self) -> None:
-        self.connections: Set[WebSocket] = set()
-        self.version: int = 1
-
-    async def connect(self, ws: WebSocket) -> None:
-        await ws.accept()
-        self.connections.add(ws)
-
-    def disconnect(self, ws: WebSocket) -> None:
-        self.connections.discard(ws)
-
-    async def broadcast_menu_updated(self) -> None:
-        self.version += 1
-        dead: List[WebSocket] = []
-        payload = {"type": "menu_updated", "version": self.version}
-        for ws in list(self.connections):
-            try:
-                await ws.send_json(payload)
-            except Exception:
-                dead.append(ws)
-        for ws in dead:
-            self.disconnect(ws)
-
-
-hub = MenuHub()
-
-
-# -------------------------
-# Schemas
-# -------------------------
-ALLOWED_CATEGORIES = {"CORE", "GUEST", "CIDER"}
+    display_order: Optional[int] = None
 
 
 class BeerOut(BaseModel):
@@ -151,6 +122,7 @@ class BeerOut(BaseModel):
     price: Optional[str] = None
     description: Optional[str] = None
     category: Optional[str] = None
+    display_order: int = 0
 
 
 class TapOut(BaseModel):
@@ -189,21 +161,10 @@ class BeerBulkItem(BaseModel):
 
 
 class BulkImportOptions(BaseModel):
-    # If True, set all beers is_active=0 before importing
     disable_all_first: bool = False
-
-    # If True, any beer not in payload gets disabled (is_active=0)
     disable_missing: bool = False
-
-    # If True, clears all taps to empty before (optional) reassignment
     clear_taps_first: bool = False
-
-    # If True, assigns beers to taps in order after import
     assign_to_taps: bool = False
-
-    # Tap assignment order:
-    # - "house_first": CORE then GUEST/CIDER
-    # - "payload": in the exact order in payload
     assign_order: str = "house_first"  # "house_first" | "payload"
 
 
@@ -212,9 +173,71 @@ class BulkBeersIn(BaseModel):
     beers: List[BeerBulkItem]
 
 
+class ReorderTapsIn(BaseModel):
+    order: List[int]
+
+
 # -------------------------
-# App
+# Realtime: WS hub
 # -------------------------
+class MenuHub:
+    def __init__(self) -> None:
+        self.connections: Set[WebSocket] = set()
+        self.version: int = 1
+
+    async def connect(self, ws: WebSocket) -> None:
+        await ws.accept()
+        self.connections.add(ws)
+
+    def disconnect(self, ws: WebSocket) -> None:
+        self.connections.discard(ws)
+
+    async def broadcast_menu_updated(self) -> None:
+        self.version += 1
+        dead: List[WebSocket] = []
+        payload = {"type": "menu_updated", "version": self.version}
+        for ws in list(self.connections):
+            try:
+                await ws.send_json(payload)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
+
+
+hub = MenuHub()
+
+
+# -------------------------
+# Startup: schema + seed
+# -------------------------
+def ensure_schema() -> None:
+    """
+    create_all() only creates missing tables.
+    This function ALSO adds missing columns for older SQLite DBs.
+    """
+    Base.metadata.create_all(bind=engine)
+
+    with engine.begin() as conn:
+        # beers.display_order
+        try:
+            conn.execute(text("SELECT display_order FROM beers LIMIT 1"))
+        except OperationalError:
+            conn.execute(
+                text(
+                    "ALTER TABLE beers ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0"
+                )
+            )
+
+        # taps.display_order
+        try:
+            conn.execute(text("SELECT display_order FROM taps LIMIT 1"))
+        except OperationalError:
+            conn.execute(
+                text(
+                    "ALTER TABLE taps ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0"
+                )
+            )
 
 
 def seed_if_empty() -> None:
@@ -222,9 +245,9 @@ def seed_if_empty() -> None:
     try:
         beer_count = db.query(Beer).count()
         tap_count = db.query(Tap).count()
+
         if beer_count == 0:
             beers = [
-                # --- HOUSE BEERS (CORE) ---
                 Beer(
                     name="Greenleaf Lager",
                     brewery="Gnarly Cedar",
@@ -232,6 +255,7 @@ def seed_if_empty() -> None:
                     abv=4.2,
                     price="6",
                     category="CORE",
+                    display_order=0,
                 ),
                 Beer(
                     name="Apostle Amber Ale",
@@ -240,6 +264,7 @@ def seed_if_empty() -> None:
                     abv=5.6,
                     price="6",
                     category="CORE",
+                    display_order=1,
                 ),
                 Beer(
                     name="Daybreak",
@@ -248,6 +273,7 @@ def seed_if_empty() -> None:
                     abv=4.8,
                     price="6",
                     category="CORE",
+                    display_order=2,
                 ),
                 Beer(
                     name="Goldenrod",
@@ -256,6 +282,7 @@ def seed_if_empty() -> None:
                     abv=5.0,
                     price="6",
                     category="CORE",
+                    display_order=3,
                 ),
                 Beer(
                     name="Crocs & Socks",
@@ -264,6 +291,7 @@ def seed_if_empty() -> None:
                     abv=7.6,
                     price="6",
                     category="CORE",
+                    display_order=4,
                 ),
                 Beer(
                     name="Supper Club",
@@ -272,6 +300,7 @@ def seed_if_empty() -> None:
                     abv=7.6,
                     price="7",
                     category="CORE",
+                    display_order=5,
                 ),
                 Beer(
                     name="Mr. Hyde",
@@ -280,6 +309,7 @@ def seed_if_empty() -> None:
                     abv=6.6,
                     price="8",
                     category="CORE",
+                    display_order=6,
                 ),
                 Beer(
                     name="Dr. Jekyll",
@@ -288,6 +318,7 @@ def seed_if_empty() -> None:
                     abv=4.8,
                     price="8",
                     category="CORE",
+                    display_order=7,
                 ),
                 Beer(
                     name="Tightlines IPA",
@@ -296,6 +327,7 @@ def seed_if_empty() -> None:
                     abv=7.0,
                     price="8",
                     category="CORE",
+                    display_order=8,
                 ),
                 Beer(
                     name="Hop Duster IPA",
@@ -304,6 +336,7 @@ def seed_if_empty() -> None:
                     abv=6.8,
                     price="8",
                     category="CORE",
+                    display_order=9,
                 ),
                 Beer(
                     name="Alien Philosopher IPA",
@@ -312,6 +345,7 @@ def seed_if_empty() -> None:
                     abv=8.1,
                     price="8",
                     category="CORE",
+                    display_order=10,
                 ),
                 Beer(
                     name="Turtle Cowboy",
@@ -320,6 +354,7 @@ def seed_if_empty() -> None:
                     abv=7.5,
                     price="8",
                     category="CORE",
+                    display_order=11,
                 ),
                 Beer(
                     name="Strawberry Shakedown",
@@ -328,6 +363,7 @@ def seed_if_empty() -> None:
                     abv=6.0,
                     price="8",
                     category="CORE",
+                    display_order=12,
                 ),
                 Beer(
                     name="Mammoth Milk Stout",
@@ -336,6 +372,7 @@ def seed_if_empty() -> None:
                     abv=6.5,
                     price="8",
                     category="CORE",
+                    display_order=13,
                 ),
                 Beer(
                     name="Woolly Wizard",
@@ -344,8 +381,8 @@ def seed_if_empty() -> None:
                     abv=6.5,
                     price="8",
                     category="CORE",
+                    display_order=14,
                 ),
-                # --- GUEST BEERS / CIDERS ---
                 Beer(
                     name="Drop Top",
                     brewery="Stubborn Brothers",
@@ -353,6 +390,7 @@ def seed_if_empty() -> None:
                     abv=None,
                     price="8",
                     category="GUEST",
+                    display_order=15,
                 ),
                 Beer(
                     name="Cherry Mechanic",
@@ -361,6 +399,7 @@ def seed_if_empty() -> None:
                     abv=None,
                     price="8",
                     category="GUEST",
+                    display_order=16,
                 ),
                 Beer(
                     name="Blackberry Sour",
@@ -369,6 +408,7 @@ def seed_if_empty() -> None:
                     abv=None,
                     price="8",
                     category="GUEST",
+                    display_order=17,
                 ),
                 Beer(
                     name="Strawberry Cider",
@@ -377,6 +417,7 @@ def seed_if_empty() -> None:
                     abv=None,
                     price="8",
                     category="CIDER",
+                    display_order=18,
                 ),
                 Beer(
                     name="Pomegranate Cider",
@@ -385,13 +426,13 @@ def seed_if_empty() -> None:
                     abv=None,
                     price="8",
                     category="CIDER",
+                    display_order=19,
                 ),
             ]
             db.add_all(beers)
             db.commit()
 
         if tap_count == 0:
-            # create 20 taps to accommodate the larger list
             for i in range(1, 25):
                 db.add(Tap(tap_number=i, display_order=i))
             db.commit()
@@ -399,7 +440,14 @@ def seed_if_empty() -> None:
         db.close()
 
 
-seed_if_empty()
+class ReorderBeersIn(BaseModel):
+    order: List[int]
+
+
+@app.on_event("startup")
+def on_startup():
+    ensure_schema()
+    seed_if_empty()
 
 
 # -------------------------
@@ -426,7 +474,9 @@ def get_menu():
                     price=tap.beer.price,
                     description=tap.beer.description,
                     category=tap.beer.category,
+                    display_order=tap.beer.display_order,
                 )
+
             out_taps.append(
                 TapOut(
                     id=tap.id,
@@ -454,10 +504,7 @@ def list_beers(include_inactive: bool = False):
         if not include_inactive:
             q = q.filter(Beer.is_active == 1)
 
-        beers = (
-            q.order_by(Beer.brewery.asc().nullslast(), Beer.name.asc())
-             .all()
-        )
+        beers = q.order_by(Beer.display_order.asc(), Beer.name.asc()).all()
 
         return [
             BeerOut(
@@ -469,6 +516,7 @@ def list_beers(include_inactive: bool = False):
                 price=b.price,
                 description=b.description,
                 category=b.category,
+                display_order=b.display_order,
             )
             for b in beers
         ]
@@ -480,20 +528,40 @@ def list_beers(include_inactive: bool = False):
 async def create_beer(body: BeerIn):
     db = SessionLocal()
     try:
+        # if no display_order specified, append to end
+        if body.display_order is None:
+            max_order = (
+                db.query(Beer.display_order).order_by(Beer.display_order.desc()).first()
+            )
+            next_order = (
+                (max_order[0] + 1) if max_order and max_order[0] is not None else 0
+            )
+        else:
+            next_order = int(body.display_order)
+
         b = Beer(
             name=body.name.strip(),
-            brewery=(body.brewery or None),
-            style=(body.style or None),
+            brewery=(
+                body.brewery.strip() if body.brewery and body.brewery.strip() else None
+            ),
+            style=(body.style.strip() if body.style and body.style.strip() else None),
             abv=body.abv,
-            price=(body.price or None),
-            description=(body.description or None),
-            category=(body.category or "CORE"),  # <-- ADD
+            price=(body.price.strip() if body.price and body.price.strip() else None),
+            description=(
+                body.description.strip()
+                if body.description and body.description.strip()
+                else None
+            ),
+            category=(body.category or "CORE"),
             is_active=1 if body.is_active else 0,
+            display_order=next_order,
         )
         db.add(b)
         db.commit()
         db.refresh(b)
+
         await hub.broadcast_menu_updated()
+
         return BeerOut(
             id=b.id,
             name=b.name,
@@ -502,7 +570,8 @@ async def create_beer(body: BeerIn):
             abv=b.abv,
             price=b.price,
             description=b.description,
-            category=b.category,  # <-- ADD
+            category=b.category,
+            display_order=b.display_order,
         )
     finally:
         db.close()
@@ -519,19 +588,27 @@ async def update_beer(beer_id: int, body: BeerUpdate):
         if body.name is not None:
             b.name = body.name.strip()
         if body.brewery is not None:
-            b.brewery = body.brewery or None
+            b.brewery = (
+                body.brewery.strip() if body.brewery and body.brewery.strip() else None
+            )
         if body.style is not None:
-            b.style = body.style or None
+            b.style = body.style.strip() if body.style and body.style.strip() else None
         if body.abv is not None:
             b.abv = body.abv
         if body.price is not None:
-            b.price = body.price or None
+            b.price = body.price.strip() if body.price and body.price.strip() else None
         if body.description is not None:
-            b.description = body.description or None
+            b.description = (
+                body.description.strip()
+                if body.description and body.description.strip()
+                else None
+            )
         if body.is_active is not None:
             b.is_active = 1 if body.is_active else 0
         if body.category is not None:
             b.category = body.category
+        if body.display_order is not None:
+            b.display_order = int(body.display_order)
 
         db.commit()
         db.refresh(b)
@@ -546,6 +623,8 @@ async def update_beer(beer_id: int, body: BeerUpdate):
             abv=b.abv,
             price=b.price,
             description=b.description,
+            category=b.category,
+            display_order=b.display_order,
         )
     finally:
         db.close()
@@ -553,13 +632,15 @@ async def update_beer(beer_id: int, body: BeerUpdate):
 
 @app.delete("/api/beers/{beer_id}")
 async def delete_beer(beer_id: int):
+    """
+    Soft delete: deactivate instead of removing row.
+    """
     db = SessionLocal()
     try:
         b = db.query(Beer).filter(Beer.id == beer_id).first()
         if not b:
             raise HTTPException(status_code=404, detail="Beer not found")
 
-        # soft delete: deactivate instead of removing
         b.is_active = 0
         db.commit()
 
@@ -594,7 +675,8 @@ async def set_tap_status(tap_id: int, body: SetStatusIn):
                 abv=tap.beer.abv,
                 price=tap.beer.price,
                 description=tap.beer.description,
-                category=tap.beer.category,  # <-- ADD
+                category=tap.beer.category,
+                display_order=tap.beer.display_order,
             )
 
         return TapOut(
@@ -642,7 +724,8 @@ async def assign_beer(tap_id: int, body: AssignBeerIn):
                 abv=tap.beer.abv,
                 price=tap.beer.price,
                 description=tap.beer.description,
-                category=tap.beer.category,  # <-- ADD
+                category=tap.beer.category,
+                display_order=tap.beer.display_order,
             )
 
         return TapOut(
@@ -668,7 +751,6 @@ async def bulk_upsert_beers(body: BulkBeersIn):
         if not beers_in:
             raise HTTPException(status_code=400, detail="beers list cannot be empty")
 
-        # normalize + validate categories
         normalized = []
         for b in beers_in:
             cat = (b.category or "CORE").strip().upper()
@@ -679,7 +761,6 @@ async def bulk_upsert_beers(body: BulkBeersIn):
                 )
             normalized.append((b, cat))
 
-        # optional: nuke actives first
         if opts.disable_all_first:
             db.query(Beer).update({Beer.is_active: 0})
             db.flush()
@@ -691,8 +772,6 @@ async def bulk_upsert_beers(body: BulkBeersIn):
         created = 0
         updated = 0
 
-        # We'll treat (name, brewery) as the unique identity for upsert
-        # (works well for menus; avoids duplicate "IPA" name collisions across breweries)
         seen_keys = set()
 
         for b, cat in normalized:
@@ -701,7 +780,6 @@ async def bulk_upsert_beers(body: BulkBeersIn):
 
             key = (name.lower(), (brewery or "").lower())
             if key in seen_keys:
-                # same beer duplicated in payload -> skip / or error
                 continue
             seen_keys.add(key)
 
@@ -736,11 +814,8 @@ async def bulk_upsert_beers(body: BulkBeersIn):
 
         db.flush()
 
-        # disable missing (beers not in payload)
         disabled_missing = 0
         if opts.disable_missing:
-            # build a filter list of keys to keep active
-            # We’ll disable beers that are NOT in payload keys
             all_beers = db.query(Beer).all()
             keep = {(k[0], k[1]) for k in seen_keys}
 
@@ -751,14 +826,11 @@ async def bulk_upsert_beers(body: BulkBeersIn):
                         beer.is_active = 0
                         disabled_missing += 1
 
-        # optional: assign active beers to taps
         assigned = 0
         if opts.assign_to_taps:
             taps = db.query(Tap).order_by(Tap.tap_number.asc()).all()
 
             if opts.assign_order == "payload":
-                # assign in incoming order (only active ones)
-                # NOTE: we need to re-fetch Beer rows in DB order matching payload
                 ids_to_assign = []
                 for b, cat in normalized:
                     if not b.is_active:
@@ -779,7 +851,6 @@ async def bulk_upsert_beers(body: BulkBeersIn):
                     if beer_row:
                         ids_to_assign.append(beer_row.id)
             else:
-                # house_first: CORE first then GUEST/CIDER
                 active = db.query(Beer).filter(Beer.is_active == 1).all()
                 core = [b for b in active if (b.category or "CORE").upper() == "CORE"]
                 guest = [
@@ -787,9 +858,8 @@ async def bulk_upsert_beers(body: BulkBeersIn):
                     for b in active
                     if (b.category or "").upper() in ("GUEST", "CIDER")
                 ]
-                # stable ordering
-                core.sort(key=lambda x: ((x.brewery or ""), x.name))
-                guest.sort(key=lambda x: ((x.brewery or ""), x.name))
+                core.sort(key=lambda x: (x.display_order, (x.brewery or ""), x.name))
+                guest.sort(key=lambda x: (x.display_order, (x.brewery or ""), x.name))
                 ids_to_assign = [b.id for b in (core + guest)]
 
             for tap, beer_id in zip(taps, ids_to_assign):
@@ -812,25 +882,44 @@ async def bulk_upsert_beers(body: BulkBeersIn):
         db.close()
 
 
-@app.delete("/api/beers/{beer_id}")
-async def delete_beer(beer_id: int):
+@app.post("/api/beers/reorder")
+async def reorder_beers(body: ReorderBeersIn):
     db = SessionLocal()
     try:
-        # 1. Find the beer record
-        b = db.query(Beer).filter(Beer.id == beer_id).first()
-        if not b:
-            raise HTTPException(status_code=404, detail="Beer not found")
+        # ensure all IDs exist (optional, but nice)
+        existing_ids = {b.id for b in db.query(Beer.id).all()}
+        for beer_id in body.order:
+            if beer_id not in existing_ids:
+                raise HTTPException(
+                    status_code=400, detail=f"Beer id {beer_id} not found"
+                )
 
-        # 2. Clear this beer from any Taps it is currently assigned to
-        # This prevents "Foreign Key" errors that block deletion
-        db.query(Tap).filter(Tap.beer_id == beer_id).update({Tap.beer_id: None})
-        db.flush()
+        # update display_order in the new sequence
+        for idx, beer_id in enumerate(body.order):
+            db.query(Beer).filter(Beer.id == beer_id).update({"display_order": idx})
 
-        # 3. PERMANENTLY remove the beer from the database
-        db.delete(b)
         db.commit()
+        await hub.broadcast_menu_updated()
+        return {"ok": True}
+    finally:
+        db.close()
 
-        # 4. Notify TV displays to refresh
+
+@app.post("/api/taps/reorder")
+async def reorder_taps(body: ReorderTapsIn):
+    db = SessionLocal()
+    try:
+        existing_ids = {t.id for t in db.query(Tap.id).all()}
+        for tap_id in body.order:
+            if tap_id not in existing_ids:
+                raise HTTPException(
+                    status_code=400, detail=f"Tap id {tap_id} not found"
+                )
+
+        for idx, tap_id in enumerate(body.order):
+            db.query(Tap).filter(Tap.id == tap_id).update({"display_order": idx})
+
+        db.commit()
         await hub.broadcast_menu_updated()
         return {"ok": True}
     finally:
@@ -843,7 +932,7 @@ async def ws_menu(ws: WebSocket):
     try:
         await ws.send_json({"type": "hello", "version": hub.version})
         while True:
-            await ws.receive()  # <-- IMPORTANT
+            await ws.receive()
     except WebSocketDisconnect:
         hub.disconnect(ws)
     except Exception:
