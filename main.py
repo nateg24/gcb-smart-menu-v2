@@ -225,28 +225,167 @@ def seed_if_empty() -> None:
         if beer_count == 0:
             beers = [
                 # --- HOUSE BEERS (CORE) ---
-                Beer(name="Greenleaf Lager", brewery="Gnarly Cedar", style="America Light Lager", abv=4.2, price="6", category="CORE"),
-                Beer(name="Apostle Amber Ale", brewery="Gnarly Cedar", style="Malty sweetness, biscuit, caramel", abv=5.6, price="6", category="CORE"),
-                Beer(name="Daybreak", brewery="Gnarly Cedar", style="Blonde Ale, light, crisp, dry finish", abv=4.8, price="6", category="CORE"),
-                Beer(name="Goldenrod", brewery="Gnarly Cedar", style="Golden Ale, Honey, Hefeweizen yeast", abv=5.0, price="6", category="CORE"),
-                Beer(name="Crocs & Socks", brewery="Gnarly Cedar", style="Special Brown ale, caramelized sugar", abv=7.6, price="6", category="CORE"),
-                Beer(name="Supper Club", brewery="Gnarly Cedar", style="Orange zest, cherries, old fashion brown ale", abv=7.6, price="7", category="CORE"),
-                Beer(name="Mr. Hyde", brewery="Gnarly Cedar", style="Farmhouse saison brewed with Marquette", abv=6.6, price="8", category="CORE"),
-                Beer(name="Dr. Jekyll", brewery="Gnarly Cedar", style="Wit grape ale with Frontenac Blanc", abv=4.8, price="8", category="CORE"),
-                Beer(name="Tightlines IPA", brewery="Gnarly Cedar", style="West Coast style - Deep Cut Cascade", abv=7.0, price="8", category="CORE"),
-                Beer(name="Hop Duster IPA", brewery="Gnarly Cedar", style="Hazy IPA - Galaxy, Citra, Chinook", abv=6.8, price="8", category="CORE"),
-                Beer(name="Alien Philosopher IPA", brewery="Gnarly Cedar", style="Double IPA Sabro, Bru-1, and Dolcita", abv=8.1, price="8", category="CORE"),
-                Beer(name="Turtle Cowboy", brewery="Gnarly Cedar", style="Hazy IPA w/ El Dorado, Azacca and Vista hops", abv=7.5, price="8", category="CORE"),
-                Beer(name="Strawberry Shakedown", brewery="Gnarly Cedar", style="Milkshake IPA, belma + mosaic hops, vanilla", abv=6.0, price="8", category="CORE"),
-                Beer(name="Mammoth Milk Stout", brewery="Gnarly Cedar", style="Milk Stout, roasted, chocolate notes", abv=6.5, price="8", category="CORE"),
-                Beer(name="Woolly Wizard", brewery="Gnarly Cedar", style="Coffee Wizard Coffee Milk Stout", abv=6.5, price="8", category="CORE"),
-
+                Beer(
+                    name="Greenleaf Lager",
+                    brewery="Gnarly Cedar",
+                    style="America Light Lager",
+                    abv=4.2,
+                    price="6",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Apostle Amber Ale",
+                    brewery="Gnarly Cedar",
+                    style="Malty sweetness, biscuit, caramel",
+                    abv=5.6,
+                    price="6",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Daybreak",
+                    brewery="Gnarly Cedar",
+                    style="Blonde Ale, light, crisp, dry finish",
+                    abv=4.8,
+                    price="6",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Goldenrod",
+                    brewery="Gnarly Cedar",
+                    style="Golden Ale, Honey, Hefeweizen yeast",
+                    abv=5.0,
+                    price="6",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Crocs & Socks",
+                    brewery="Gnarly Cedar",
+                    style="Special Brown ale, caramelized sugar",
+                    abv=7.6,
+                    price="6",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Supper Club",
+                    brewery="Gnarly Cedar",
+                    style="Orange zest, cherries, old fashion brown ale",
+                    abv=7.6,
+                    price="7",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Mr. Hyde",
+                    brewery="Gnarly Cedar",
+                    style="Farmhouse saison brewed with Marquette",
+                    abv=6.6,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Dr. Jekyll",
+                    brewery="Gnarly Cedar",
+                    style="Wit grape ale with Frontenac Blanc",
+                    abv=4.8,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Tightlines IPA",
+                    brewery="Gnarly Cedar",
+                    style="West Coast style - Deep Cut Cascade",
+                    abv=7.0,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Hop Duster IPA",
+                    brewery="Gnarly Cedar",
+                    style="Hazy IPA - Galaxy, Citra, Chinook",
+                    abv=6.8,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Alien Philosopher IPA",
+                    brewery="Gnarly Cedar",
+                    style="Double IPA Sabro, Bru-1, and Dolcita",
+                    abv=8.1,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Turtle Cowboy",
+                    brewery="Gnarly Cedar",
+                    style="Hazy IPA w/ El Dorado, Azacca and Vista hops",
+                    abv=7.5,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Strawberry Shakedown",
+                    brewery="Gnarly Cedar",
+                    style="Milkshake IPA, belma + mosaic hops, vanilla",
+                    abv=6.0,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Mammoth Milk Stout",
+                    brewery="Gnarly Cedar",
+                    style="Milk Stout, roasted, chocolate notes",
+                    abv=6.5,
+                    price="8",
+                    category="CORE",
+                ),
+                Beer(
+                    name="Woolly Wizard",
+                    brewery="Gnarly Cedar",
+                    style="Coffee Wizard Coffee Milk Stout",
+                    abv=6.5,
+                    price="8",
+                    category="CORE",
+                ),
                 # --- GUEST BEERS / CIDERS ---
-                Beer(name="Drop Top", brewery="Stubborn Brothers", style="Sun Drop Radler", abv=None, price="8", category="GUEST"),
-                Beer(name="Cherry Mechanic", brewery="Ahnapee", style="Gluten Free", abv=None, price="8", category="GUEST"),
-                Beer(name="Blackberry Sour", brewery="Stubborn Brothers", style="Sour Ale", abv=None, price="8", category="GUEST"),
-                Beer(name="Strawberry Cider", brewery="Cider Boys", style="Cider", abv=None, price="8", category="CIDER"),
-                Beer(name="Pomegranate Cider", brewery="DownEast Cider", style="Cider", abv=None, price="8", category="CIDER"),
+                Beer(
+                    name="Drop Top",
+                    brewery="Stubborn Brothers",
+                    style="Sun Drop Radler",
+                    abv=None,
+                    price="8",
+                    category="GUEST",
+                ),
+                Beer(
+                    name="Cherry Mechanic",
+                    brewery="Ahnapee",
+                    style="Gluten Free",
+                    abv=None,
+                    price="8",
+                    category="GUEST",
+                ),
+                Beer(
+                    name="Blackberry Sour",
+                    brewery="Stubborn Brothers",
+                    style="Sour Ale",
+                    abv=None,
+                    price="8",
+                    category="GUEST",
+                ),
+                Beer(
+                    name="Strawberry Cider",
+                    brewery="Cider Boys",
+                    style="Cider",
+                    abv=None,
+                    price="8",
+                    category="CIDER",
+                ),
+                Beer(
+                    name="Pomegranate Cider",
+                    brewery="DownEast Cider",
+                    style="Cider",
+                    abv=None,
+                    price="8",
+                    category="CIDER",
+                ),
             ]
             db.add_all(beers)
             db.commit()
@@ -258,7 +397,8 @@ def seed_if_empty() -> None:
             db.commit()
     finally:
         db.close()
-        
+
+
 seed_if_empty()
 
 
@@ -669,6 +809,34 @@ async def bulk_upsert_beers(body: BulkBeersIn):
             "disabled_missing": disabled_missing,
             "assigned_to_taps": assigned,
         }
+    finally:
+        db.close()
+
+
+# main.py
+
+
+# main.py - Update the delete_beer route
+@app.delete("/api/beers/{beer_id}")
+async def delete_beer(beer_id: int):
+    db = SessionLocal()
+    try:
+        # 1. Find the beer record
+        b = db.query(Beer).filter(Beer.id == beer_id).first()
+        if not b:
+            raise HTTPException(status_code=404, detail="Beer not found")
+
+        # 2. Unassign this beer from any taps (Required to avoid DB errors)
+        db.query(Tap).filter(Tap.beer_id == beer_id).update({Tap.beer_id: None})
+        db.flush() 
+
+        # 3. PERMANENTLY remove the beer from the database
+        db.delete(b)
+        db.commit()
+
+        # 4. Notify TV displays to refresh
+        await hub.broadcast_menu_updated()
+        return {"ok": True}
     finally:
         db.close()
 

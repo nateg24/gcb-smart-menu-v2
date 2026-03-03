@@ -191,3 +191,18 @@ h2 {
     justify-content: flex-end;
     margin-top: 10px
 }
+
+.btn.danger {
+    border-color: rgba(239, 68, 68, .45);
+    color: #ef4444; /* Bright Red */
+}
+
+.btn.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}

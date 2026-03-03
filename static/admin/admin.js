@@ -23,6 +23,7 @@ async function api(path, opts = {}) {
         const txt = await res.text().catch(() => "");
         throw new Error(`${opts.method || "GET"} ${path} failed: ${res.status} ${txt}`);
     }
+    // Return json if possible, otherwise text
     const ct = res.headers.get("content-type") || "";
     return ct.includes("application/json") ? res.json() : res.text();
 }
@@ -104,6 +105,12 @@ function renderTaps() {
 }
 
 
+// Inside static/admin/admin.js
+
+// Replace the renderBeers function in static/admin/admin.js
+// static/admin/admin.js
+
+// 1. Update the render loop to use the word "Delete"
 function renderBeers() {
     beersEl.innerHTML = beers.map(b => `
     <div class="row" style="grid-template-columns: 1fr 220px;">
@@ -113,28 +120,41 @@ function renderBeers() {
       </div>
       <div class="controls">
         <button class="btn primary" data-edit="${b.id}">Edit</button>
-        <button class="btn danger" data-del="${b.id}">Disable</button>
+        <button class="btn danger" data-del="${b.id}">Delete</button>
       </div>
     </div>
   `).join("");
-
-    beersEl.querySelectorAll("[data-edit]").forEach(btn => {
-        btn.addEventListener("click", () => openBeerForm(Number(btn.getAttribute("data-edit"))));
-    });
-
-    beersEl.querySelectorAll("[data-del]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-            const id = Number(btn.getAttribute("data-del"));
-            if (!confirm("Disable this beer? (It will stop showing up)")) return;
-            await api(`/api/beers/${id}`, { method: "DELETE" });
-            await loadAll();
-        });
-    });
 }
 
+// 2. Add this ONE listener OUTSIDE of any other functions
+document.getElementById("beers").addEventListener("click", async (e) => {
+    // Check if the clicked element (or its parent) is the delete button
+    const deleteBtn = e.target.closest("[data-del]");
+
+    if (deleteBtn) {
+        const id = deleteBtn.getAttribute("data-del");
+
+        // This confirmation MUST appear now
+        if (!confirm("Permanently delete this beer from the database?")) return;
+
+        try {
+            console.log("Sending DELETE for ID:", id);
+            const res = await api(`/api/beers/${id}`, { method: "DELETE" });
+
+            if (res.ok || res) {
+                console.log("Delete successful. Refreshing UI...");
+                await loadAll(); // Re-fetches the list from the server
+            }
+        } catch (err) {
+            console.error("Delete failed:", err);
+            alert("Error: " + err.message);
+        }
+    }
+});
+
 function openBeerForm(beerId = null) {
-  const b = beerId ? beers.find(x => x.id === beerId) : null;
-  const cat = String(b?.category || "CORE").toUpperCase();
+    const b = beerId ? beers.find(x => x.id === beerId) : null;
+    const cat = String(b?.category || "CORE").toUpperCase();
 
     beerFormEl.classList.remove("hidden");
     beerFormEl.innerHTML = `
