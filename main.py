@@ -19,7 +19,6 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     DateTime,
-    or_,
     text,
 )
 from sqlalchemy.exc import OperationalError
@@ -688,7 +687,13 @@ async def update_beer(beer_id: int, body: BeerUpdate, _=Depends(verify_token)):
         if body.is_active is not None:
             b.is_active = 1 if body.is_active else 0
         if body.category is not None:
-            b.category = body.category
+            cat = body.category.strip().upper()
+            if cat not in ALLOWED_CATEGORIES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid category '{body.category}'. Allowed: {sorted(ALLOWED_CATEGORIES)}",
+                )
+            b.category = cat
         if body.display_order is not None:
             b.display_order = int(body.display_order)
 
@@ -868,6 +873,10 @@ async def bulk_upsert_beers(body: BulkBeersIn, _=Depends(verify_token)):
         updated = 0
 
         seen_keys = set()  # tracks (name, brewery) pairs already processed to skip duplicates
+        key_to_beer = {}  # maps key → beer ORM object for use in payload-order assignment
+
+        max_order_row = db.query(Beer.display_order).order_by(Beer.display_order.desc()).first()
+        next_order = (max_order_row[0] + 1) if max_order_row and max_order_row[0] is not None else 0
 
         for b, cat in normalized:
             name = b.name.strip()
@@ -893,20 +902,23 @@ async def bulk_upsert_beers(body: BulkBeersIn, _=Depends(verify_token)):
                 existing.description = b.description
                 existing.category = cat
                 existing.is_active = 1 if b.is_active else 0
+                key_to_beer[key] = existing
                 updated += 1
             else:
-                db.add(
-                    Beer(
-                        name=name,
-                        brewery=brewery,
-                        style=b.style,
-                        abv=b.abv,
-                        price=b.price,
-                        description=b.description,
-                        category=cat,
-                        is_active=1 if b.is_active else 0,
-                    )
+                new_beer = Beer(
+                    name=name,
+                    brewery=brewery,
+                    style=b.style,
+                    abv=b.abv,
+                    price=b.price,
+                    description=b.description,
+                    category=cat,
+                    is_active=1 if b.is_active else 0,
+                    display_order=next_order,
                 )
+                db.add(new_beer)
+                key_to_beer[key] = new_beer
+                next_order += 1
                 created += 1
 
         db.flush()
@@ -930,24 +942,15 @@ async def bulk_upsert_beers(body: BulkBeersIn, _=Depends(verify_token)):
             taps = db.query(Tap).order_by(Tap.tap_number.asc()).all()
 
             if opts.assign_order == "payload":
-                # Use the order beers appear in the payload
+                # Use the order beers appear in the payload; IDs are known from upsert
                 ids_to_assign = []
                 for b, cat in normalized:
                     if not b.is_active:
                         continue
                     name = b.name.strip()
                     brewery = b.brewery.strip() if b.brewery else None
-                    beer_row = (
-                        db.query(Beer)
-                        .filter(Beer.name == name)
-                        .filter(
-                            or_(
-                                Beer.brewery == brewery,
-                                (Beer.brewery.is_(None) if brewery is None else False),
-                            )
-                        )
-                        .first()
-                    )
+                    key = (name.lower(), (brewery or "").lower())
+                    beer_row = key_to_beer.get(key)
                     if beer_row:
                         ids_to_assign.append(beer_row.id)
             else:
