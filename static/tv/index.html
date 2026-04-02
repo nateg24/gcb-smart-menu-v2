@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=1280, shrink-to-fit=yes" />
     <title>Menu TV</title>
     <link rel="stylesheet" href="/static/tv/tv.css" />
 </head>
@@ -17,16 +17,13 @@
 
         <main class="page">
 
-            <!-- HOUSE SECTION (TOP) -->
             <div id="houseGrid" class="grid fadeSwap"></div>
             <div id="flightsRow" class="flightRow fadeSwap"></div>
 
-            <!-- DIVIDER (Flights + Guest Title) -->
             <div class="divider">
                 <div class="sectionTitle">GUEST TAPS</div>
             </div>
 
-            <!-- GUEST SECTION (BOTTOM) -->
             <div id="guestGrid" class="grid fadeSwap"></div>
 
             <div id="meta" class="meta"></div>
@@ -34,6 +31,13 @@
         </main>
     </div>
 
+    <!-- QR code (bottom-left corner) -->
+    <div class="qrCorner">
+        <div id="qrCode"></div>
+        <div class="qrLabel">SCAN TO VIEW MENU</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="/static/tv/tv.js"></script>
 </body>
 

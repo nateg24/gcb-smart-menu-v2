@@ -9,16 +9,27 @@
 </head>
 
 <body>
+    <!-- PIN lock screen -->
+    <div id="pinOverlay" class="pinOverlay">
+        <div class="pinCard">
+            <div class="pinTitle">Menu Admin</div>
+            <p class="pinSub">Enter staff PIN to continue</p>
+            <input type="password" inputmode="numeric" maxlength="4" id="pinInput" class="pinInput" autocomplete="off" placeholder="••••" />
+            <div id="pinError" class="pinError hidden">Incorrect PIN — try again</div>
+            <button id="pinSubmit" class="btn primary pinBtn">Unlock</button>
+        </div>
+    </div>
+
     <header class="topbar">
         <div class="title">Menu Admin</div>
         <div class="sub" id="meta">Loading…</div>
     </header>
     <main class="wrap">
         <section class="panel">
-            <h2>House Taps</h2>
-            <div id="taps" class="list"></div>
-            <h2 style="margin-top:18px;">Guest Taps</h2>
-            <div id="guestTaps" class="list"></div>
+            <h2>In House Taps</h2>
+            <div id="houseTapGrid" class="tapGrid"></div>
+            <h2 style="margin-top: 24px;">Guest Taps</h2>
+            <div id="guestTapGrid" class="tapGrid"></div>
         </section>
         <section class="panel">
             <div class="panelHead">

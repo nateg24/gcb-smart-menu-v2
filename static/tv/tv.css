@@ -65,13 +65,12 @@ body {
     padding: 10px 0 30px;
 }
 
-/* centered canvas so nothing ever hits screen edges */
+/* fill the full screen */
 .menuCanvas {
     position: relative;
-    max-width: 1700px;
-    margin: 0 auto;
-    padding: 0 120px;
-    /* Remove any other background-image properties here */
+    width: 100%;
+    padding: 0 48px;
+    box-sizing: border-box;
 }
 
 .menuCanvas::after {
@@ -99,8 +98,8 @@ body {
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 70px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px 70px;
     align-items: start;
 }
 
@@ -162,6 +161,10 @@ body {
     margin-bottom: 18px;
 }
 
+.item--empty {
+    visibility: hidden;
+}
+
 .itemTop {
     display: grid;
     grid-template-columns: 1fr 40px;
@@ -198,12 +201,30 @@ body {
     font-size: 12px;
 }
 
-/* HARD boundary so content never reaches screen edges */
-.menuCanvas {
-    max-width: 1700px;
-    margin: 0 auto;
-    padding: 0 120px;
-    /* safe area inside the boundary */
+.qrCorner {
+    position: fixed;
+    bottom: 28px;
+    left: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+}
+
+.qrCorner #qrCode img,
+.qrCorner #qrCode canvas {
+    border-radius: 6px;
+    display: block;
+}
+
+.qrLabel {
+    font-family: var(--header-sub-font);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
 }
 
 /* make header + page fill the canvas, not the viewport */
@@ -212,12 +233,6 @@ body {
     width: 100%;
     padding-left: 0;
     padding-right: 0;
-}
-
-.menuCanvas {
-    max-width: 1700px;
-    margin: 0 auto;
-    padding: 0 120px;
 }
 
 .divider {
@@ -242,5 +257,4 @@ body {
 #houseGrid,
 #guestGrid {
     min-height: 200px;
-    /* tweak based on your typical tap count */
 }
