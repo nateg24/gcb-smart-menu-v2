@@ -199,6 +199,14 @@ h2 {
     padding: 6px 10px;
 }
 
+/* Larger tap targets on touch devices (tablets, iPads) */
+@media (pointer: coarse) {
+    .btnSmall {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
 /* ---------------------------------------
    FORMS
 ---------------------------------------- */
@@ -308,6 +316,14 @@ h2 {
     user-select: none;
     font-size: 18px;
     padding: 6px 8px;
+}
+
+.beerRow--house {
+    border-left: 3px solid var(--brand-gold);
+}
+
+.beerRow--guest {
+    border-left: 3px solid #6366f1;
 }
 
 .beerMain {

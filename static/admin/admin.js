@@ -150,6 +150,7 @@ function buildTapCells(taps, assignedIds) {
                     </option>`;
                 }).join("")}
             </select>
+            ${t.beer ? `<button class="btn btnSmall danger tapRemoveBtn" data-tap-remove="${t.id}">Remove</button>` : ""}
         </div>`;
     }).join("");
 }
@@ -169,6 +170,23 @@ function bindTapAssign(container) {
                 menu = await api("/api/menu");
                 renderTapGrid();
                 initGridSorting(); // re-init Sortable after DOM is rebuilt
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        });
+    });
+
+    container.querySelectorAll("[data-tap-remove]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            const tapId = e.target.getAttribute("data-tap-remove");
+            try {
+                await api(`/api/taps/${tapId}/assign`, {
+                    method: "POST",
+                    body: JSON.stringify({ beer_id: null })
+                });
+                menu = await api("/api/menu");
+                renderTapGrid();
+                initGridSorting();
             } catch (err) {
                 alert("Error: " + err.message);
             }
@@ -201,8 +219,12 @@ function renderTapGrid() {
 
 // Render the beer list with drag handles, info, and Edit/Delete buttons
 function renderBeers() {
-    beersEl.innerHTML = beers.map(b => `
-    <div class="beerRow" data-id="${b.id}">
+    beersEl.innerHTML = beers.map(b => {
+        const isHouse = b.brewery?.toLowerCase().includes("gnarly cedar");
+        const isGuest = ["GUEST", "CIDER"].includes((b.category || "").toUpperCase());
+        const rowMod = isHouse ? " beerRow--house" : isGuest ? " beerRow--guest" : "";
+        return `
+    <div class="beerRow${rowMod}" data-id="${b.id}">
       <div class="dragHandle" title="Drag to reorder">☰</div>
 
       <div class="beerMain">
@@ -219,7 +241,8 @@ function renderBeers() {
         <button type="button" class="btnSmall danger" data-del="${b.id}">Delete</button>
       </div>
     </div>
-  `).join("");
+  `;
+    }).join("");
 }
 
 // Use event delegation on the beer list so we don't rebind listeners after every re-render.
