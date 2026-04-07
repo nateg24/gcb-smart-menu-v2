@@ -240,8 +240,8 @@ hub = MenuHub()
 # Auth
 # -------------------------
 
-# PIN is read from the environment; falls back to "1234" for local dev
-ADMIN_PIN: str = os.environ.get("ADMIN_PIN", "1234")
+# PIN is read from the environment; falls back to "1515" for local dev
+ADMIN_PIN: str = os.environ.get("ADMIN_PIN", "1515")
 
 # In-memory set of valid Bearer tokens — tokens are lost on server restart (intentional)
 _valid_tokens: Set[str] = set()
