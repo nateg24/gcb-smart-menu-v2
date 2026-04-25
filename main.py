@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import os
 import secrets
+import shutil
+import uuid
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional, Set
 
-from fastapi import Depends, FastAPI, Header, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import Depends, FastAPI, File, Header, UploadFile, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -37,11 +39,14 @@ app.mount(
 )
 
 
-# Both /tv and /menu serve the TV display page (same HTML, different URL aliases)
 @app.get("/tv")
-@app.get("/menu")
 def tv_page():
     return FileResponse(BASE_DIR / "static" / "tv" / "index.html")
+
+
+@app.get("/menu")
+def menu_page():
+    return FileResponse(BASE_DIR / "static" / "menu" / "index.html")
 
 
 @app.get("/admin")
@@ -80,6 +85,18 @@ class Beer(Base):
     category = Column(String, nullable=True, default="CORE")  # CORE | GUEST | CIDER
     is_active = Column(Integer, nullable=False, default=1)    # soft-delete flag (1=active, 0=deleted)
     display_order = Column(Integer, nullable=False, default=0) # controls sort order on the menu
+
+
+# ORM model for transitional slides shown between menu views on /tv
+class Slide(Base):
+    __tablename__ = "slides"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=True)
+    body = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
+    is_active = Column(Integer, nullable=False, default=1)
+    display_order = Column(Integer, nullable=False, default=0)
+    duration = Column(Integer, nullable=False, default=30)  # seconds to display on screen
 
 
 # ORM model for physical taps on the wall
@@ -201,6 +218,28 @@ class ReorderTapsIn(BaseModel):
     order: List[int]
 
 
+class SlideIn(BaseModel):
+    title: Optional[str] = None
+    body: Optional[str] = None
+    image_url: Optional[str] = None
+    is_active: bool = True
+    duration: int = 30
+
+
+class SlideOut(BaseModel):
+    id: int
+    title: Optional[str] = None
+    body: Optional[str] = None
+    image_url: Optional[str] = None
+    is_active: bool
+    display_order: int
+    duration: int
+
+
+class ReorderSlidesIn(BaseModel):
+    order: List[int]
+
+
 # -------------------------
 # Realtime: WS hub
 # -------------------------
@@ -301,6 +340,12 @@ def ensure_schema() -> None:
                     "ALTER TABLE taps ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0"
                 )
             )
+
+        # Add slides columns if the table already existed without them
+        try:
+            conn.execute(text("SELECT duration FROM slides LIMIT 1"))
+        except OperationalError:
+            conn.execute(text("ALTER TABLE slides ADD COLUMN duration INTEGER NOT NULL DEFAULT 30"))
 
 
 def seed_if_empty() -> None:
@@ -1034,6 +1079,102 @@ async def reorder_taps(body: ReorderTapsIn, _=Depends(verify_token)):
 
         db.commit()
         await hub.broadcast_menu_updated()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.post("/api/uploads")
+async def upload_image(file: UploadFile = File(...), _=Depends(verify_token)):
+    allowed = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+    uploads_dir = BASE_DIR / "static" / "uploads"
+    uploads_dir.mkdir(exist_ok=True)
+    ext = Path(file.filename).suffix.lower() or ".jpg"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    with (uploads_dir / filename).open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"url": f"/static/uploads/{filename}"}
+
+
+@app.get("/api/slides", response_model=List[SlideOut])
+def list_slides():
+    db = SessionLocal()
+    try:
+        slides = db.query(Slide).order_by(Slide.display_order.asc(), Slide.id.asc()).all()
+        return [SlideOut(id=s.id, title=s.title, body=s.body, image_url=s.image_url,
+                         is_active=bool(s.is_active), display_order=s.display_order,
+                         duration=s.duration) for s in slides]
+    finally:
+        db.close()
+
+
+@app.post("/api/slides/reorder")
+async def reorder_slides(body: ReorderSlidesIn, _=Depends(verify_token)):
+    db = SessionLocal()
+    try:
+        existing_ids = {s.id for s in db.query(Slide.id).all()}
+        for slide_id in body.order:
+            if slide_id not in existing_ids:
+                raise HTTPException(status_code=400, detail=f"Slide id {slide_id} not found")
+        for idx, slide_id in enumerate(body.order):
+            db.query(Slide).filter(Slide.id == slide_id).update({"display_order": idx})
+        db.commit()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.post("/api/slides", response_model=SlideOut)
+async def create_slide(body: SlideIn, _=Depends(verify_token)):
+    db = SessionLocal()
+    try:
+        max_order = db.query(Slide.display_order).order_by(Slide.display_order.desc()).first()
+        next_order = (max_order[0] + 1) if max_order and max_order[0] is not None else 0
+        s = Slide(title=body.title, body=body.body, image_url=body.image_url,
+                  is_active=1 if body.is_active else 0, display_order=next_order,
+                  duration=body.duration)
+        db.add(s)
+        db.commit()
+        db.refresh(s)
+        return SlideOut(id=s.id, title=s.title, body=s.body, image_url=s.image_url,
+                        is_active=bool(s.is_active), display_order=s.display_order,
+                        duration=s.duration)
+    finally:
+        db.close()
+
+
+@app.put("/api/slides/{slide_id}", response_model=SlideOut)
+async def update_slide(slide_id: int, body: SlideIn, _=Depends(verify_token)):
+    db = SessionLocal()
+    try:
+        s = db.query(Slide).filter(Slide.id == slide_id).first()
+        if not s:
+            raise HTTPException(status_code=404, detail="Slide not found")
+        s.title = body.title
+        s.body = body.body
+        s.image_url = body.image_url
+        s.is_active = 1 if body.is_active else 0
+        s.duration = body.duration
+        db.commit()
+        db.refresh(s)
+        return SlideOut(id=s.id, title=s.title, body=s.body, image_url=s.image_url,
+                        is_active=bool(s.is_active), display_order=s.display_order,
+                        duration=s.duration)
+    finally:
+        db.close()
+
+
+@app.delete("/api/slides/{slide_id}")
+async def delete_slide(slide_id: int, _=Depends(verify_token)):
+    db = SessionLocal()
+    try:
+        s = db.query(Slide).filter(Slide.id == slide_id).first()
+        if not s:
+            raise HTTPException(status_code=404, detail="Slide not found")
+        db.delete(s)
+        db.commit()
         return {"ok": True}
     finally:
         db.close()

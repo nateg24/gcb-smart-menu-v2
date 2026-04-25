@@ -114,3 +114,6 @@ To expose the app publicly (e.g., at `menu.gnarlycedar.com`), follow the steps i
 | `WS`     | `/ws/menu`              | No   | Real-time menu sync             |
 
 All authenticated endpoints require a `Authorization: Bearer <token>` header. Obtain the token from `/api/auth/login`. Tokens are stored in memory and cleared on server restart.
+
+## Assets
+Assets will need to be downloaded from dropbox as the file is too large to commit to GitHub ---- Reach out to Katrina for access to Gnarly Cedar/Ledgestone design assets. 

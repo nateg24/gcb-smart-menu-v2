@@ -358,6 +358,45 @@ h2 {
    PIN LOCK OVERLAY
 ---------------------------------------- */
 
+/* Slides panel spans full width below the two-column section */
+.slidesPanel {
+    grid-column: 1 / -1;
+}
+
+.slideRow {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    margin-bottom: 10px;
+}
+
+.slideRow--inactive {
+    opacity: 0.45;
+}
+
+.slideMain {
+    flex: 1;
+}
+
+.slideName {
+    font-weight: 700;
+}
+
+.slideMeta {
+    opacity: 0.75;
+    font-size: 0.95em;
+    margin-top: 2px;
+}
+
+.slideActions {
+    display: flex;
+    gap: 8px;
+}
+
 .pinOverlay {
     position: fixed;
     inset: 0;

@@ -1,9 +1,9 @@
 @import url("/static/theme.css");
 
 :root {
-    --bg: #474616;
-    --text: #fff2e8;
-    --muted: #c8c8b0;
+    --bg: #f0f0e4;
+    --text: #0a0a0a;
+    --muted: #444;
     --gold: #b7ad1e;
 
     --header-font: "Beiko", Impact, "Arial Black", sans-serif;
@@ -25,39 +25,29 @@ body {
 }
 
 .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 48px 16px;
+    padding: 40px 0 20px;
+    text-align: center;
     width: 100%;
-    position: relative;
-    overflow: visible;
 }
 
-.header__beers-label {
+.header__title {
     font-family: var(--header-font);
     font-weight: 800;
-    font-size: clamp(44px, 5.5vw, 72px);
-    line-height: 1;
+    letter-spacing: -3px;
+    transform: scaleX(0.9);
+    display: inline-block;
+    color: #b7ad1e;
+    text-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+    font-size: clamp(64px, 8vw, 110px);
+    line-height: 0.9;
     text-transform: uppercase;
-    letter-spacing: 5px;
-    color: var(--text);
 }
 
-.header__logo {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.header__logo img {
-    height: clamp(250px, 33vw, 400px);
-    width: auto;
-    margin-top: -10px;
+.header__sub {
+    font-family: "Karla", sans-serif;
+    letter-spacing: 14px;
+    font-weight: 700;
+    margin-top: -5px;
 }
 
 .page {
@@ -74,7 +64,7 @@ body {
 .grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px 60px;
+    gap: 30px 70px;
     align-items: start;
 }
 
@@ -89,10 +79,9 @@ body {
 .sectionTitle {
     font-family: var(--title-font);
     font-weight: 900;
-    letter-spacing: 4px;
+    letter-spacing: 1px;
     text-transform: uppercase;
     font-size: 42px;
-    color: var(--text);
     margin: 16px 0 10px;
     margin-top: 18px;
     text-align: center;
@@ -105,7 +94,7 @@ body {
     gap: 14px;
     margin-top: 40px;
     padding-top: 20px;
-    border-top: 2px solid var(--muted);
+    border-top: 2px solid var(--gold);
 }
 
 .flightRow .left {
@@ -120,24 +109,21 @@ body {
     text-transform: uppercase;
     font-size: 26px;
     letter-spacing: 1px;
-    color: var(--text);
 }
 
 .flightRow .desc {
     font-size: 14px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--muted);
 }
 
 .flightRow .price {
     font-size: 16px;
     font-weight: 700;
-    color: var(--text);
 }
 
 .item {
-    margin-bottom: 14px;
+    margin-bottom: 18px;
 }
 
 .item--empty {
@@ -153,23 +139,21 @@ body {
 
 .name {
     font-family: var(--title-font);
-    font-size: 32px;
+    font-size: 28px;
     letter-spacing: 1px;
     text-transform: uppercase;
     line-height: 1.05;
-    color: var(--text);
 }
 
 .price {
     text-align: right;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: var(--text);
 }
 
 .desc {
     margin-top: 4px;
-    font-size: 18px;
+    font-size: 16px;
     color: var(--muted);
     line-height: 1.25;
 }
@@ -177,26 +161,18 @@ body {
 .meta {
     margin-top: 16px;
     text-align: center;
-    color: var(--muted);
+    color: #666;
     font-size: 12px;
 }
 
-.qrCorner {
-    position: fixed;
-    bottom: 28px;
-    left: 28px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    z-index: 10;
+.menuCanvas {
+    position: relative;
 }
 
 .logoCorner {
-    position: fixed;
+    position: absolute;
     bottom: 28px;
     right: 28px;
-    z-index: -1;
     pointer-events: none;
 }
 
@@ -204,22 +180,7 @@ body {
     width: 200px;
     height: auto;
     display: block;
-    opacity: .7;
-}
-
-.qrCorner #qrCode img,
-.qrCorner #qrCode canvas {
-    border-radius: 6px;
-    display: block;
-}
-
-.qrLabel {
-    font-family: var(--header-sub-font);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
+    opacity: .85;
 }
 
 .header,
@@ -251,60 +212,10 @@ body {
     min-height: 200px;
 }
 
-/* ── Slide overlay ───────────────────────────────────────── */
-.slideView {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    opacity: 1;
-    transition: opacity 600ms ease;
-}
-
-.slideView--hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.slideInner {
-    text-align: center;
-    padding: 80px;
-    max-width: 1000px;
-}
-
-.slideTitle {
-    font-family: var(--title-font);
-    font-size: clamp(52px, 7vw, 96px);
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    color: var(--text);
-    line-height: 1.05;
-    margin-bottom: 28px;
-    margin-top: 200px;
-}
-
-.slideBody {
-    font-family: var(--body-font);
-    font-size: clamp(24px, 3vw, 40px);
-    color: var(--muted);
-    line-height: 1.5;
-}
-
-.slideImage {
-    max-width: 100%;
-    max-height: 380px;
-    margin-top: 36px;
-    object-fit: contain;
-}
-
 @media print {
     @page {
-        size: landscape;
-        margin: 0;
+        size: letter landscape;
+        margin: 0.2in;
     }
 
     * {
@@ -312,9 +223,30 @@ body {
         print-color-adjust: exact !important;
     }
 
-    .qrCorner,
-    .logoCorner,
+    html {
+        zoom: 0.58;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
     .meta {
         display: none !important;
     }
+
+    .logoCorner {
+        position: fixed;
+        bottom: 0.2in;
+        right: 0.2in;
+    }
+
+    .grid,
+    .item {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
 }

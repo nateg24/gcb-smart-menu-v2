@@ -18,14 +18,23 @@ const flightsRow = document.getElementById("flightsRow"); // static beer flights
 // The IP is hardcoded to the local network address of the server.
 const MENU_URL = "http://192.168.40.22:8000/menu";
 
-new QRCode(document.getElementById("qrCode"), {
-    text: MENU_URL,
-    width: 110,
-    height: 110,
-    colorDark: "#0a0a0a",
-    colorLight: "#f2f2f2",
-    correctLevel: QRCode.CorrectLevel.M // medium error correction — balances size and redundancy
-});
+const qrEl = document.getElementById("qrCode");
+if (qrEl && typeof QRCode !== "undefined") {
+    new QRCode(qrEl, {
+        text: MENU_URL,
+        width: 110,
+        height: 110,
+        colorDark: "#0a0a0a",
+        colorLight: "#f2f2f2",
+        correctLevel: QRCode.CorrectLevel.M
+    });
+}
+
+// Hide QR corner in print mode
+if (new URLSearchParams(window.location.search).get("print") === "1") {
+    const qrCorner = document.querySelector(".qrCorner");
+    if (qrCorner) qrCorner.style.display = "none";
+}
 
 let ws = null;
 let lastVersion = null; // tracks the last rendered menu version to skip unnecessary re-renders
@@ -142,12 +151,60 @@ function connectWS() {
   };
 }
 
+// ── Slide cycling ─────────────────────────────────────────
+const MENU_DURATION_MS = 3000; // how long the menu shows before cycling to slides
+
+const slideView  = document.getElementById("slideView");
+const slideTitleEl = document.getElementById("slideTitle");
+const slideBodyEl  = document.getElementById("slideBody");
+const slideImageEl = document.getElementById("slideImage");
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function showSlide(slide) {
+  slideTitleEl.textContent = slide.title || "";
+  slideBodyEl.textContent  = slide.body  || "";
+  if (slide.image_url) {
+    slideImageEl.src = slide.image_url;
+    slideImageEl.style.display = "";
+  } else {
+    slideImageEl.style.display = "none";
+  }
+  slideView.classList.remove("slideView--hidden");
+  await sleep(slide.duration * 1000);
+  slideView.classList.add("slideView--hidden");
+  await sleep(600); // match CSS fade duration
+}
+
+async function runSlideLoop() {
+  while (true) {
+    await sleep(MENU_DURATION_MS);
+    try {
+      const res = await fetch("/api/slides");
+      if (!res.ok) continue;
+      const slides = await res.json();
+      const active = slides.filter(s => s.is_active);
+      for (const slide of active) {
+        await showSlide(slide);
+      }
+    } catch {}
+  }
+}
+
 // Boot sequence: load menu immediately, then open WebSocket for real-time updates.
 // Also starts a 15-second polling interval as a fallback (e.g. if WS stays broken).
 (async () => {
   try { await loadMenu(); }
   catch (e) { if (meta) meta.textContent = `Error: ${e.message}`; }
 
+  if (new URLSearchParams(window.location.search).get("print") === "1") {
+    window.print();
+    return;
+  }
+
   connectWS();
   setInterval(() => loadMenu().catch(() => {}), 15000); // poll every 15s as safety net
+  runSlideLoop(); // start cycling slides in the background
 })();

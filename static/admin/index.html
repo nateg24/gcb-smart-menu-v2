@@ -23,6 +23,7 @@
     <header class="topbar">
         <div class="title">Menu Admin</div>
         <div class="sub" id="meta">Loading…</div>
+        <button class="btn" id="exportPdfBtn">Export PDF</button>
     </header>
     <main class="wrap">
         <section class="panel">
@@ -39,7 +40,16 @@
             <div id="beerForm" class="card hidden"></div>
             <div id="beers" class="list"></div>
         </section>
+        <section class="panel slidesPanel">
+            <div class="panelHead">
+                <h2>Slides</h2>
+                <button class="btn" id="newSlideBtn">+ New Slide</button>
+            </div>
+            <div id="slideForm" class="hidden"></div>
+            <div id="slidesList" class="list"></div>
+        </section>
     </main>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <script src="/static/admin/admin.js"></script>

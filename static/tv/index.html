@@ -11,8 +11,11 @@
 <body>
     <div class="menuCanvas">
         <header class="header">
-            <div class="header__title">GNARLY CEDAR BREWERY</div>
-            <div class="header__sub">BEERS ON TAP BY GCB</div>
+            <div class="header__beers-label">BEERS<br>ON TAP</div>
+            <div class="header__logo">
+                <img src="/static/assets/GNARLY CEDAR/Logos/Letterpress Texture/Logo/Large/Khaki - Large.png" alt="Gnarly Cedar" />
+            </div>
+            <div class="header__beers-label">BEERS<br>ON TAP</div>
         </header>
 
         <main class="page">
@@ -31,6 +34,20 @@
         </main>
     </div>
 
+    <!-- Slide overlay — shown between menu cycles -->
+    <div id="slideView" class="slideView slideView--hidden">
+        <div class="slideInner">
+            <header class="header">
+                <div class="header__logo">
+                    <img src="/static/assets/GNARLY CEDAR/Logos/Letterpress Texture/Logo/Large/Khaki - Large.png" alt="Gnarly Cedar" />
+                </div>
+            </header>
+            <div id="slideTitle" class="slideTitle"></div>
+            <div id="slideBody" class="slideBody"></div>
+            <img id="slideImage" class="slideImage" alt="" />
+        </div>
+    </div>
+
     <!-- QR code (bottom-left corner) -->
     <div class="qrCorner">
         <div id="qrCode"></div>
@@ -39,7 +56,7 @@
 
     <!-- Logo (bottom-right corner) -->
     <div class="logoCorner">
-        <img src="/static/assets/detailed-green.png" alt="GCB Logo" />
+        <img src="/static/assets/GNARLY CEDAR/Logos/Symbol/digital/detailed cream/full color/gnarlycedar-detailed-cream-full-color-rgb-450px-w-72ppi.png" alt="GCB Logo" />
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>

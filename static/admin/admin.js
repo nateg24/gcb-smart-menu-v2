@@ -9,6 +9,9 @@ const pinOverlay = document.getElementById("pinOverlay");       // full-screen P
 const pinInput = document.getElementById("pinInput");           // PIN input field
 const pinError = document.getElementById("pinError");           // error message shown on wrong PIN
 const pinSubmit = document.getElementById("pinSubmit");         // "Unlock" button
+const slidesListEl = document.getElementById("slidesList");     // list of slide rows
+const slideFormEl = document.getElementById("slideForm");       // create/edit slide form container
+const newSlideBtn = document.getElementById("newSlideBtn");     // "New Slide" button
 
 // ── Auth helpers ──────────────────────────────────────────
 // Token is stored in sessionStorage so it's cleared when the tab is closed
@@ -73,9 +76,10 @@ async function submitPin() {
 pinSubmit.addEventListener("click", submitPin);
 pinInput.addEventListener("keydown", e => { if (e.key === "Enter") submitPin(); });
 
-// Module-level state: current beer list and full menu (taps + beers)
+// Module-level state: current beer list, full menu, and slides
 let beers = [];
 let menu = null;
+let slides = [];
 
 // Escape special HTML characters to prevent XSS when injecting data into innerHTML
 function escapeHtml(s) {
@@ -334,6 +338,10 @@ function openBeerForm(beerId = null) {
 
 newBeerBtn.addEventListener("click", () => openBeerForm(null));
 
+document.getElementById("exportPdfBtn").addEventListener("click", () => {
+    window.open("/menu?print=1", "_blank");
+});
+
 // Sortable.js instances — stored so they can be destroyed and recreated after DOM rebuilds
 let beerSortable = null;
 let houseGridSortable = null;
@@ -389,18 +397,146 @@ function initBeerSorting() {
     });
 }
 
+// ── Slides ────────────────────────────────────────────────
+
+function renderSlides() {
+    if (!slides.length) {
+        slidesListEl.innerHTML = `<div class="small" style="padding:10px;">No slides yet — click "+ New Slide" to add one.</div>`;
+        return;
+    }
+    slidesListEl.innerHTML = slides.map(s => `
+        <div class="slideRow${s.is_active ? "" : " slideRow--inactive"}" data-id="${s.id}">
+            <div class="dragHandle" title="Drag to reorder">☰</div>
+            <div class="slideMain">
+                <div class="slideName">${escapeHtml(s.title || "(No title)")}</div>
+                <div class="slideMeta">${s.duration}s display${s.is_active ? "" : " • inactive"}</div>
+            </div>
+            <div class="slideActions">
+                <button type="button" class="btnSmall" data-slide-edit="${s.id}">Edit</button>
+                <button type="button" class="btnSmall danger" data-slide-del="${s.id}">Delete</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function openSlideForm(slideId = null) {
+    const s = slideId ? slides.find(x => x.id === slideId) : null;
+
+    slideFormEl.classList.remove("hidden");
+    slideFormEl.innerHTML = `
+        <div class="tapNum" style="margin-bottom:10px;">${slideId ? "Edit Slide" : "New Slide"}</div>
+        <div class="formGrid" style="margin-top:10px;">
+            <input class="input" id="sf_title" placeholder="Title (e.g. Upcoming Events)" value="${escapeHtml(s?.title || "")}" />
+            <input class="input" id="sf_duration" type="number" min="5" max="300" placeholder="Display seconds" value="${s?.duration ?? 30}" />
+        </div>
+        <textarea class="textarea" id="sf_body" placeholder="Body text" style="margin-top:12px;">${escapeHtml(s?.body || "")}</textarea>
+        <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+            <input class="input" id="sf_image" placeholder="Image URL (optional)" value="${escapeHtml(s?.image_url || "")}" style="flex:1;" />
+            <label class="btn" style="cursor:pointer;white-space:nowrap;margin:0;">
+                Upload Image
+                <input type="file" id="sf_upload" accept="image/*" style="display:none;" />
+            </label>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted);">
+            <input type="checkbox" id="sf_active" ${s ? (s.is_active ? "checked" : "") : "checked"} />
+            Active (show on TV)
+        </label>
+        <div class="formActions" style="margin-top:32px;">
+            <button class="btn" id="cancelSlideForm">Cancel</button>
+            <button class="btn primary" id="saveSlideForm">Save</button>
+        </div>
+    `;
+
+    document.getElementById("cancelSlideForm").onclick = () => {
+        slideFormEl.classList.add("hidden");
+        slideFormEl.innerHTML = "";
+    };
+
+    document.getElementById("sf_upload").addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const res = await fetch("/api/uploads", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${getToken()}` },
+                body: formData
+            });
+            if (!res.ok) throw new Error("Upload failed");
+            const { url } = await res.json();
+            document.getElementById("sf_image").value = url;
+        } catch (err) {
+            alert("Upload failed: " + err.message);
+        }
+    });
+
+    document.getElementById("saveSlideForm").onclick = async () => {
+        const payload = {
+            title: document.getElementById("sf_title").value.trim() || null,
+            body: document.getElementById("sf_body").value.trim() || null,
+            image_url: document.getElementById("sf_image").value.trim() || null,
+            duration: parseInt(document.getElementById("sf_duration").value) || 30,
+            is_active: document.getElementById("sf_active").checked,
+        };
+
+        if (slideId) {
+            await api(`/api/slides/${slideId}`, { method: "PUT", body: JSON.stringify(payload) });
+        } else {
+            await api("/api/slides", { method: "POST", body: JSON.stringify(payload) });
+        }
+
+        await loadAll();
+        slideFormEl.classList.add("hidden");
+        slideFormEl.innerHTML = "";
+    };
+}
+
+slidesListEl.addEventListener("click", async (e) => {
+    const delBtn = e.target.closest("[data-slide-del]");
+    if (delBtn) {
+        if (!confirm("Delete this slide? This cannot be undone.")) return;
+        try {
+            await api(`/api/slides/${delBtn.getAttribute("data-slide-del")}`, { method: "DELETE" });
+            await loadAll();
+        } catch (err) { alert("Error: " + err.message); }
+        return;
+    }
+    const editBtn = e.target.closest("[data-slide-edit]");
+    if (editBtn) openSlideForm(Number(editBtn.getAttribute("data-slide-edit")));
+});
+
+newSlideBtn.addEventListener("click", () => openSlideForm(null));
+
+let slideSortable = null;
+
+function initSlideSorting() {
+    if (slideSortable) slideSortable.destroy();
+    slideSortable = new Sortable(slidesListEl, {
+        animation: 150,
+        handle: ".dragHandle",
+        onEnd: async () => {
+            const ids = [...slidesListEl.querySelectorAll(".slideRow")].map(el => Number(el.dataset.id));
+            await api("/api/slides/reorder", { method: "POST", body: JSON.stringify({ order: ids }) });
+            await loadAll();
+        }
+    });
+}
+
 // Fetch both the beer list and the full menu in parallel, then render everything.
 async function loadAll() {
     meta.textContent = "Loading…";
 
     try {
-        const [beersRes, menuRes] = await Promise.all([
+        const [beersRes, menuRes, slidesRes] = await Promise.all([
             api("/api/beers"),
-            api("/api/menu")
+            api("/api/menu"),
+            fetch("/api/slides").then(r => r.json())
         ]);
 
         beers = Array.isArray(beersRes) ? beersRes : [];
         menu = menuRes;
+        slides = Array.isArray(slidesRes) ? slidesRes : [];
 
         if (!menu || !Array.isArray(menu.taps)) {
             console.error("Bad /api/menu response:", menuRes);
@@ -410,8 +546,10 @@ async function loadAll() {
         meta.textContent = `Loaded • ${new Date(menu.generated_at).toLocaleTimeString()}`;
         renderTapGrid();
         renderBeers();
+        renderSlides();
         initGridSorting();
         initBeerSorting();
+        initSlideSorting();
     } catch (e) {
         console.error(e);
         meta.textContent = `Error: ${e.message}`;

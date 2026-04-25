@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+
+# Manager-uploaded images (stored on the server, not in the repo)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Brand assets (large binary files, managed separately)
+static/assets/
