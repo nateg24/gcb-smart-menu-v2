@@ -46,6 +46,39 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// Extract a short style label from a beer's name + style fields.
+// Used to build "Featured IPA", "Featured Stout", etc. on the badge.
+// More specific patterns are checked first (e.g. "Double IPA" before "IPA").
+function beerType(beer) {
+  const hay = `${beer.name || ""} ${beer.style || ""}`.toLowerCase();
+  const checks = [
+    ["Double IPA", "double ipa"],
+    ["IPA",        "ipa"],
+    ["Stout",      "stout"],
+    ["Porter",     "porter"],
+    ["Saison",     "saison"],
+    ["Witbier",    "witbier"],
+    ["Wit",        " wit"],
+    ["Sour",       "sour"],
+    ["Radler",     "radler"],
+    ["Cider",      "cider"],
+    ["Lager",      "lager"],
+    ["Pilsner",    "pilsner"],
+    ["Hefeweizen", "hefeweizen"],
+    ["Wheat",      "wheat"],
+    ["Amber",      "amber"],
+    ["Blonde",     "blonde"],
+    ["Pale Ale",   "pale ale"],
+    ["Brown Ale",  "brown ale"],
+    ["Milk Stout", "milk stout"],
+    ["Ale",        "ale"],
+  ];
+  for (const [label, keyword] of checks) {
+    if (hay.includes(keyword)) return label;
+  }
+  return null;
+}
+
 // Build the description line shown under a beer's name.
 // Prefers the description field; falls back to style. Appends ABV if present.
 function beerDesc(beer) {
@@ -61,10 +94,17 @@ function beerDesc(beer) {
 function renderItems(items) {
   return items.map(t => {
     if (!t.beer) return `<div class="item item--empty"></div>`;
+    const featuredLabel = t.beer.is_featured
+      ? `Featured${beerType(t.beer) ? ` ${beerType(t.beer)}` : ""}`
+      : "";
+    const badges = [
+      featuredLabel ? `<span class="badge badge--featured">${featuredLabel}</span>` : "",
+      t.beer.is_new ? `<span class="badge badge--new">New</span>` : "",
+    ].join("");
     return `
     <div class="item">
       <div class="itemTop">
-        <div class="name">${escapeHtml(t.beer.name)}</div>
+        <div class="name"><span>${escapeHtml(t.beer.name)}</span>${badges}</div>
         <div class="price">${escapeHtml((t.beer.price || "").replace("$", ""))}</div>
       </div>
       <div class="desc">${escapeHtml(beerDesc(t.beer))}</div>
@@ -154,7 +194,8 @@ function connectWS() {
 // ── Slide cycling ─────────────────────────────────────────
 const MENU_DURATION_MS = 3000; // how long the menu shows before cycling to slides
 
-const slideView  = document.getElementById("slideView");
+const slideView    = document.getElementById("slideView");
+const slideInnerEl = slideView?.querySelector(".slideInner");
 const slideTitleEl = document.getElementById("slideTitle");
 const slideBodyEl  = document.getElementById("slideBody");
 const slideImageEl = document.getElementById("slideImage");
@@ -163,7 +204,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function showSlide(slide) {
+function swapSlideContent(slide) {
   slideTitleEl.textContent = slide.title || "";
   slideBodyEl.textContent  = slide.body  || "";
   if (slide.image_url) {
@@ -172,10 +213,50 @@ async function showSlide(slide) {
   } else {
     slideImageEl.style.display = "none";
   }
-  slideView.classList.remove("slideView--hidden");
+}
+
+async function showSlide(slide, fadeOutAfter = true) {
+  const overlayVisible = !slideView.classList.contains("slideView--hidden");
+
+  if (overlayVisible) {
+    // Between slides: fade inner content down and out
+    slideInnerEl.style.opacity = "0";
+    slideInnerEl.style.transform = "translateY(14px)";
+    await sleep(500);
+
+    swapSlideContent(slide);
+
+    // Snap to above, then float up and fade in
+    slideInnerEl.style.transition = "none";
+    slideInnerEl.style.transform = "translateY(-14px)";
+    slideInnerEl.offsetHeight; // force reflow so snap takes effect
+    slideInnerEl.style.transition = "";
+    slideInnerEl.style.opacity = "1";
+    slideInnerEl.style.transform = "translateY(0)";
+    await sleep(500);
+  } else {
+    // First slide: set content then fade the whole overlay in
+    swapSlideContent(slide);
+    slideView.classList.remove("slideView--hidden");
+    await sleep(600); // let overlay fade complete before clock starts
+  }
+
   await sleep(slide.duration * 1000);
-  slideView.classList.add("slideView--hidden");
-  await sleep(600); // match CSS fade duration
+
+  if (fadeOutAfter) {
+    // Fade inner out, then close the overlay
+    slideInnerEl.style.opacity = "0";
+    slideInnerEl.style.transform = "translateY(14px)";
+    await sleep(400);
+    slideView.classList.add("slideView--hidden");
+    await sleep(600); // overlay fade duration
+    // Reset inner silently while overlay is hidden
+    slideInnerEl.style.transition = "none";
+    slideInnerEl.style.opacity = "1";
+    slideInnerEl.style.transform = "translateY(0)";
+    slideInnerEl.offsetHeight;
+    slideInnerEl.style.transition = "";
+  }
 }
 
 async function runSlideLoop() {
@@ -186,8 +267,9 @@ async function runSlideLoop() {
       if (!res.ok) continue;
       const slides = await res.json();
       const active = slides.filter(s => s.is_active);
-      for (const slide of active) {
-        await showSlide(slide);
+      for (let i = 0; i < active.length; i++) {
+        // only fade out on the last slide — between slides the overlay stays up
+        await showSlide(active[i], i === active.length - 1);
       }
     } catch {}
   }
@@ -206,5 +288,5 @@ async function runSlideLoop() {
 
   connectWS();
   setInterval(() => loadMenu().catch(() => {}), 15000); // poll every 15s as safety net
-  runSlideLoop(); // start cycling slides in the background
+  if (slideView) runSlideLoop(); // slides only exist on /tv
 })();

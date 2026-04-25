@@ -158,6 +158,10 @@ body {
     text-transform: uppercase;
     line-height: 1.05;
     color: var(--text);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .price {
@@ -172,6 +176,40 @@ body {
     font-size: 18px;
     color: var(--muted);
     line-height: 1.25;
+}
+
+.badge {
+    display: inline-block;
+    font-family: var(--body-font);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    vertical-align: middle;
+    margin-left: 8px;
+    line-height: 1.6;
+}
+
+.badge--new {
+    background: var(--gold);
+    color: var(--bg);
+}
+
+.badge--featured {
+    background: none;
+    border: none;
+    box-shadow: none;
+    color: var(--text);
+    font-family: var(--body-font);
+    letter-spacing: 1px;
+    padding: 0 2px;
+    border-radius: 0;
+}
+
+.badge--featured::before {
+    content: "★ ";
 }
 
 .meta {
@@ -273,6 +311,7 @@ body {
     text-align: center;
     padding: 80px;
     max-width: 1000px;
+    transition: opacity 500ms ease, transform 500ms ease;
 }
 
 .slideTitle {

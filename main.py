@@ -85,6 +85,9 @@ class Beer(Base):
     category = Column(String, nullable=True, default="CORE")  # CORE | GUEST | CIDER
     is_active = Column(Integer, nullable=False, default=1)    # soft-delete flag (1=active, 0=deleted)
     display_order = Column(Integer, nullable=False, default=0) # controls sort order on the menu
+    is_new = Column(Integer, nullable=False, default=0)        # shows "NEW" badge on TV
+    is_featured = Column(Integer, nullable=False, default=0)   # shows "FEATURED" badge on TV
+    notes = Column(String, nullable=True)                      # internal staff notes, never shown on TV/menu
 
 
 # ORM model for transitional slides shown between menu views on /tv
@@ -129,6 +132,9 @@ class BeerIn(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = "CORE"
     is_active: bool = True
+    is_new: bool = False
+    is_featured: bool = False
+    notes: Optional[str] = None
     display_order: Optional[int] = None  # if omitted, appended to the end
 
 
@@ -142,6 +148,9 @@ class BeerUpdate(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     is_active: Optional[bool] = None
+    is_new: Optional[bool] = None
+    is_featured: Optional[bool] = None
+    notes: Optional[str] = None
     display_order: Optional[int] = None
 
 
@@ -156,6 +165,9 @@ class BeerOut(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     display_order: int = 0
+    is_new: bool = False
+    is_featured: bool = False
+    notes: Optional[str] = None
 
 
 # Response shape for a tap (optionally includes the beer assigned to it)
@@ -340,6 +352,19 @@ def ensure_schema() -> None:
                     "ALTER TABLE taps ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0"
                 )
             )
+
+        # Add is_new / is_featured to beers if missing
+        try:
+            conn.execute(text("SELECT is_new FROM beers LIMIT 1"))
+        except OperationalError:
+            conn.execute(text("ALTER TABLE beers ADD COLUMN is_new INTEGER NOT NULL DEFAULT 0"))
+            conn.execute(text("ALTER TABLE beers ADD COLUMN is_featured INTEGER NOT NULL DEFAULT 0"))
+
+        # Add notes to beers if missing
+        try:
+            conn.execute(text("SELECT notes FROM beers LIMIT 1"))
+        except OperationalError:
+            conn.execute(text("ALTER TABLE beers ADD COLUMN notes TEXT"))
 
         # Add slides columns if the table already existed without them
         try:
@@ -594,6 +619,8 @@ def get_menu():
                     description=tap.beer.description,
                     category=tap.beer.category,
                     display_order=tap.beer.display_order,
+                    is_new=bool(tap.beer.is_new),
+                    is_featured=bool(tap.beer.is_featured),
                 )
 
             out_taps.append(
@@ -640,6 +667,9 @@ def list_beers(include_inactive: bool = False):
                 description=b.description,
                 category=b.category,
                 display_order=b.display_order,
+                is_new=bool(b.is_new),
+                is_featured=bool(b.is_featured),
+                notes=b.notes,
             )
             for b in beers
         ]
@@ -678,6 +708,9 @@ async def create_beer(body: BeerIn, _=Depends(verify_token)):
             ),
             category=(body.category or "CORE"),
             is_active=1 if body.is_active else 0,
+            is_new=1 if body.is_new else 0,
+            is_featured=1 if body.is_featured else 0,
+            notes=body.notes.strip() if body.notes and body.notes.strip() else None,
             display_order=next_order,
         )
         db.add(b)
@@ -697,6 +730,9 @@ async def create_beer(body: BeerIn, _=Depends(verify_token)):
             description=b.description,
             category=b.category,
             display_order=b.display_order,
+            is_new=bool(b.is_new),
+            is_featured=bool(b.is_featured),
+            notes=b.notes,
         )
     finally:
         db.close()
@@ -731,6 +767,12 @@ async def update_beer(beer_id: int, body: BeerUpdate, _=Depends(verify_token)):
             )
         if body.is_active is not None:
             b.is_active = 1 if body.is_active else 0
+        if body.is_new is not None:
+            b.is_new = 1 if body.is_new else 0
+        if body.is_featured is not None:
+            b.is_featured = 1 if body.is_featured else 0
+        if body.notes is not None:
+            b.notes = body.notes.strip() if body.notes.strip() else None
         if body.category is not None:
             cat = body.category.strip().upper()
             if cat not in ALLOWED_CATEGORIES:
@@ -757,6 +799,9 @@ async def update_beer(beer_id: int, body: BeerUpdate, _=Depends(verify_token)):
             description=b.description,
             category=b.category,
             display_order=b.display_order,
+            is_new=bool(b.is_new),
+            is_featured=bool(b.is_featured),
+            notes=b.notes,
         )
     finally:
         db.close()
@@ -1052,6 +1097,19 @@ async def reorder_beers(body: ReorderBeersIn, _=Depends(verify_token)):
         for idx, beer_id in enumerate(body.order):
             db.query(Beer).filter(Beer.id == beer_id).update({"display_order": idx})
 
+        db.commit()
+        await hub.broadcast_menu_updated()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.post("/api/taps/clear")
+async def clear_all_taps(_=Depends(verify_token)):
+    """Unassign all beers from all taps at once."""
+    db = SessionLocal()
+    try:
+        db.query(Tap).update({Tap.beer_id: None, Tap.last_updated_at: datetime.utcnow()})
         db.commit()
         await hub.broadcast_menu_updated()
         return {"ok": True}

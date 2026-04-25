@@ -143,6 +143,10 @@ body {
     letter-spacing: 1px;
     text-transform: uppercase;
     line-height: 1.05;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .price {
@@ -156,6 +160,40 @@ body {
     font-size: 16px;
     color: var(--muted);
     line-height: 1.25;
+}
+
+.badge {
+    display: inline-block;
+    font-family: var(--body-font);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 20px;
+    vertical-align: middle;
+    margin-left: 7px;
+    line-height: 1.6;
+}
+
+.badge--new {
+    background: var(--gold);
+    color: var(--bg);
+}
+
+.badge--featured {
+    background: none;
+    border: none;
+    box-shadow: none;
+    color: var(--text);
+    font-family: var(--body-font);
+    letter-spacing: 1px;
+    padding: 0 2px;
+    border-radius: 0;
+}
+
+.badge--featured::before {
+    content: "★ ";
 }
 
 .meta {
@@ -212,6 +250,205 @@ body {
     min-height: 200px;
 }
 
+/* ── Wine page ───────────────────────────────────────────── */
+.winePage {
+    margin-top: 60px;
+    border-top: 3px solid var(--text);
+}
+
+.wineCanvas {
+    padding: 32px 48px 60px;
+}
+
+.wineMainGrid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: 0 70px;
+    align-items: start;
+}
+
+/* Hero */
+.wineHero {
+    margin-bottom: 24px;
+}
+
+.wineHeroTitle {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    line-height: 1;
+}
+
+.wineGrape {
+    height: 72px;
+    width: auto;
+    display: block;
+    flex-shrink: 0;
+}
+
+.wineWordMark {
+    font-family: var(--title-font);
+    font-size: clamp(52px, 6.5vw, 84px);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 6px;
+    line-height: 1;
+    color: var(--text);
+}
+
+.wineVenue {
+    font-family: var(--body-font);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 8px;
+}
+
+.wineVenueDesc {
+    font-family: var(--body-font);
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Category sections — rotated label + item list side by side */
+.wineCatSection {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 20px;
+}
+
+.wineCatLabel {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--title-font);
+    font-size: 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    color: var(--text);
+    flex-shrink: 0;
+    border-right: 2px solid var(--text);
+    padding-right: 12px;
+    margin-right: 18px;
+}
+
+/* Wine / to-go items */
+.wineItems {
+    flex: 1;
+    min-width: 0;
+}
+
+.wineItem {
+    margin-bottom: 10px;
+}
+
+.wineItemTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.wineItemName {
+    font-family: var(--title-font);
+    font-size: 21px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text);
+    line-height: 1.1;
+}
+
+.wineItemPrice {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.wineItemDesc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 1px;
+    line-height: 1.3;
+}
+
+/* Beverages (right column top) */
+.bevSection {
+    margin-bottom: 24px;
+}
+
+.bevItem {
+    margin-bottom: 7px;
+}
+
+.bevRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.bevContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.bevName {
+    font-family: var(--title-font);
+    font-size: 19px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+
+.bevDesc {
+    font-family: var(--body-font);
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.bevDescSub {
+    font-family: var(--body-font);
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 1px;
+    line-height: 1.3;
+}
+
+.bevPrice {
+    font-family: var(--body-font);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* GNARLY TO-GO */
+.togoSection {
+    border-top: 2px solid var(--text);
+    padding-top: 16px;
+}
+
+.togoTitle {
+    font-family: var(--title-font);
+    font-size: clamp(48px, 7vw, 90px);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 0.88;
+    margin-bottom: 18px;
+}
+
 @media print {
     @page {
         size: letter landscape;
@@ -230,7 +467,6 @@ body {
     body {
         margin: 0;
         padding: 0;
-        overflow: hidden;
     }
 
     .meta {
@@ -249,4 +485,33 @@ body {
         break-inside: avoid;
     }
 
+    /* Wine page fills full page 2 */
+    .winePage {
+        break-before: page;
+        margin-top: 0;
+        border-top: none;
+        height: 100vh;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wineCanvas {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wineMainGrid {
+        flex: 1;
+        align-items: stretch;
+    }
+
+    /* Both columns stretch and space their children to fill the column height */
+    .wineLeft,
+    .wineRight {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
 }

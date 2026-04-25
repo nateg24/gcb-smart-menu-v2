@@ -297,6 +297,15 @@ function openBeerForm(beerId = null) {
     </div>
 
     <textarea class="textarea" id="f_desc" placeholder="Description (optional)">${escapeHtml(b?.description || "")}</textarea>
+    <textarea class="textarea" id="f_notes" placeholder="Staff notes (internal only — never shown on TV or menu)" style="margin-top:8px;">${escapeHtml(b?.notes || "")}</textarea>
+    <div style="display:flex;gap:20px;margin-top:12px;font-size:13px;color:var(--muted);">
+      <label style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="f_is_new" ${b?.is_new ? "checked" : ""} /> New
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="f_is_featured" ${b?.is_featured ? "checked" : ""} /> Featured
+      </label>
+    </div>
 
     <div class="formActions">
       <button class="btn" id="cancelForm">Cancel</button>
@@ -317,7 +326,10 @@ function openBeerForm(beerId = null) {
             abv: parseFloat(document.getElementById("f_abv").value) || null,
             price: document.getElementById("f_price").value.trim() || null,
             description: document.getElementById("f_desc").value.trim() || null,
+            notes: document.getElementById("f_notes").value.trim() || null,
             category: document.getElementById("f_category").value,
+            is_new: document.getElementById("f_is_new").checked,
+            is_featured: document.getElementById("f_is_featured").checked,
             is_active: true,
         };
 
@@ -337,6 +349,16 @@ function openBeerForm(beerId = null) {
 }
 
 newBeerBtn.addEventListener("click", () => openBeerForm(null));
+
+document.getElementById("clearTapsBtn").addEventListener("click", async () => {
+    if (!confirm("Remove all beers from all taps? This cannot be undone.")) return;
+    try {
+        await api("/api/taps/clear", { method: "POST" });
+        await loadAll();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+});
 
 document.getElementById("exportPdfBtn").addEventListener("click", () => {
     window.open("/menu?print=1", "_blank");
