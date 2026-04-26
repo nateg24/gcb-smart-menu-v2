@@ -57,14 +57,14 @@ body {
 .menuCanvas {
     position: relative;
     width: 100%;
-    padding: 0 48px;
+    padding: 0 28px;
     box-sizing: border-box;
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 30px 70px;
+    gap: 36px 80px;
     align-items: start;
 }
 
@@ -81,9 +81,8 @@ body {
     font-weight: 900;
     letter-spacing: 1px;
     text-transform: uppercase;
-    font-size: 42px;
-    margin: 16px 0 10px;
-    margin-top: 18px;
+    font-size: 50px;
+    margin: 20px 0 12px;
     text-align: center;
 }
 
@@ -107,23 +106,23 @@ body {
 .flightRow .label {
     font-family: var(--title-font);
     text-transform: uppercase;
-    font-size: 26px;
+    font-size: 32px;
     letter-spacing: 1px;
 }
 
 .flightRow .desc {
-    font-size: 14px;
+    font-size: 18px;
     letter-spacing: 2px;
     text-transform: uppercase;
 }
 
 .flightRow .price {
-    font-size: 16px;
+    font-size: 22px;
     font-weight: 700;
 }
 
 .item {
-    margin-bottom: 18px;
+    margin-bottom: 24px;
 }
 
 .item--empty {
@@ -139,7 +138,7 @@ body {
 
 .name {
     font-family: var(--title-font);
-    font-size: 28px;
+    font-size: 34px;
     letter-spacing: 1px;
     text-transform: uppercase;
     line-height: 1.05;
@@ -151,25 +150,25 @@ body {
 
 .price {
     text-align: right;
-    font-size: 16px;
+    font-size: 22px;
     font-weight: 700;
 }
 
 .desc {
-    margin-top: 4px;
-    font-size: 16px;
+    margin-top: 6px;
+    font-size: 18px;
     color: var(--muted);
-    line-height: 1.25;
+    line-height: 1.3;
 }
 
 .badge {
     display: inline-block;
     font-family: var(--body-font);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
-    padding: 2px 7px;
+    padding: 3px 9px;
     border-radius: 20px;
     vertical-align: middle;
     margin-left: 7px;
@@ -254,33 +253,52 @@ body {
 .winePage {
     margin-top: 60px;
     border-top: 3px solid var(--text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 .wineCanvas {
-    padding: 32px 48px 60px;
+    flex: 1;
+    padding: 40px 28px 48px;
+    display: flex;
+    flex-direction: column;
 }
 
 .wineMainGrid {
+    flex: 1;
     display: grid;
     grid-template-columns: 5fr 7fr;
-    gap: 0 70px;
-    align-items: start;
+    gap: 0 80px;
+    align-items: stretch;
+}
+
+.wineLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wineRight {
+    display: flex;
+    flex-direction: column;
 }
 
 /* Hero */
 .wineHero {
-    margin-bottom: 24px;
+    flex-shrink: 0;
 }
 
 .wineHeroTitle {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 20px;
     line-height: 1;
 }
 
 .wineGrape {
-    height: 72px;
+    height: 130px;
     width: auto;
     display: block;
     flex-shrink: 0;
@@ -288,30 +306,30 @@ body {
 
 .wineWordMark {
     font-family: var(--title-font);
-    font-size: clamp(52px, 6.5vw, 84px);
+    font-size: clamp(72px, 9vw, 120px);
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 6px;
+    letter-spacing: 0.18em;
     line-height: 1;
     color: var(--text);
 }
 
 .wineVenue {
     font-family: var(--body-font);
-    font-size: 13px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: 5px;
     text-transform: uppercase;
     color: var(--muted);
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .wineVenueDesc {
     font-family: var(--body-font);
-    font-size: 13px;
+    font-size: 18px;
     color: var(--muted);
     font-style: italic;
-    margin-top: 4px;
+    margin-top: 6px;
     line-height: 1.4;
 }
 
@@ -319,32 +337,39 @@ body {
 .wineCatSection {
     display: flex;
     align-items: stretch;
-    margin-bottom: 20px;
+    flex: 1;
+    min-height: 0;
 }
 
 .wineCatLabel {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     font-family: var(--title-font);
-    font-size: 16px;
+    font-size: 24px;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 5px;
+    letter-spacing: 6px;
     color: var(--text);
     flex-shrink: 0;
     border-right: 2px solid var(--text);
-    padding-right: 12px;
-    margin-right: 18px;
+    padding-right: 18px;
+    margin-right: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Wine / to-go items */
 .wineItems {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .wineItem {
-    margin-bottom: 10px;
+    margin-bottom: 0;
 }
 
 .wineItemTop {
@@ -356,7 +381,7 @@ body {
 
 .wineItemName {
     font-family: var(--title-font);
-    font-size: 21px;
+    font-size: 34px;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -365,7 +390,7 @@ body {
 }
 
 .wineItemPrice {
-    font-size: 14px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--text);
     white-space: nowrap;
@@ -373,26 +398,26 @@ body {
 }
 
 .wineItemDesc {
-    font-size: 13px;
+    font-size: 18px;
     color: var(--muted);
-    margin-top: 1px;
+    margin-top: 4px;
     line-height: 1.3;
 }
 
 /* Beverages (right column top) */
 .bevSection {
-    margin-bottom: 24px;
+    margin-bottom: 32px;
 }
 
 .bevItem {
-    margin-bottom: 7px;
+    margin-bottom: 14px;
 }
 
 .bevRow {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 16px;
+    gap: 24px;
 }
 
 .bevContent {
@@ -402,7 +427,7 @@ body {
 
 .bevName {
     font-family: var(--title-font);
-    font-size: 19px;
+    font-size: 34px;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -411,21 +436,21 @@ body {
 
 .bevDesc {
     font-family: var(--body-font);
-    font-size: 13px;
+    font-size: 18px;
     color: var(--muted);
 }
 
 .bevDescSub {
     font-family: var(--body-font);
-    font-size: 12px;
+    font-size: 18px;
     color: var(--muted);
-    margin-top: 1px;
-    line-height: 1.3;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 .bevPrice {
     font-family: var(--body-font);
-    font-size: 14px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--text);
     white-space: nowrap;
@@ -435,18 +460,22 @@ body {
 /* GNARLY TO-GO */
 .togoSection {
     border-top: 2px solid var(--text);
-    padding-top: 16px;
+    padding-top: 22px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .togoTitle {
     font-family: var(--title-font);
-    font-size: clamp(48px, 7vw, 90px);
+    font-size: clamp(72px, 10vw, 140px);
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 0;
     color: var(--gold);
     line-height: 0.88;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
 }
 
 @media print {
@@ -491,27 +520,6 @@ body {
         margin-top: 0;
         border-top: none;
         height: 100vh;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .wineCanvas {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .wineMainGrid {
-        flex: 1;
-        align-items: stretch;
-    }
-
-    /* Both columns stretch and space their children to fill the column height */
-    .wineLeft,
-    .wineRight {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        min-height: unset;
     }
 }

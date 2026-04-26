@@ -113,6 +113,31 @@ function renderItems(items) {
   }).join("");
 }
 
+// Scale the beer section down so it never overflows one screen height.
+// Uses transform (doesn't affect layout flow) + a negative marginBottom to
+// collapse the phantom space transform leaves behind.
+function autoFitBeerGrid() {
+    const canvas = document.querySelector('.menuCanvas');
+    if (!canvas) return;
+
+    // Reset so we always measure the natural unscaled height
+    canvas.style.transform = '';
+    canvas.style.marginBottom = '';
+
+    requestAnimationFrame(() => {
+        const available = window.innerHeight;
+        const height = canvas.offsetHeight;
+        if (height <= available) return;
+
+        const scale = (available / height) * 0.98;
+        canvas.style.transform = `scale(${scale})`;
+        canvas.style.transformOrigin = 'top center';
+        canvas.style.marginBottom = `-${Math.ceil(height * (1 - scale))}px`;
+    });
+}
+
+window.addEventListener('resize', autoFitBeerGrid);
+
 // Re-render the entire menu display with fresh data from the API.
 function renderMenu(data) {
   // Update the status bar with the menu version and fetch time
@@ -148,6 +173,8 @@ function renderMenu(data) {
 
   const divider = document.querySelector(".divider");
   if (divider) divider.style.display = hasGuest ? "" : "none";
+
+  autoFitBeerGrid();
 }
 
 // Fetch the latest menu from the API and re-render if the version changed.
@@ -192,7 +219,7 @@ function connectWS() {
 }
 
 // ── Slide cycling ─────────────────────────────────────────
-const MENU_DURATION_MS = 3000; // how long the menu shows before cycling to slides
+const MENU_DURATION_MS = 120000; // how long the menu shows before cycling to slides
 
 const slideView    = document.getElementById("slideView");
 const slideInnerEl = slideView?.querySelector(".slideInner");
