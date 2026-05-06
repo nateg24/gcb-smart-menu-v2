@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=1280, shrink-to-fit=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Menu TV</title>
     <link rel="stylesheet" href="/static/tv/tv.css" />
 </head>
@@ -15,13 +15,21 @@
             <div class="header__logo">
                 <img src="/static/assets/GNARLY CEDAR/Logos/Letterpress Texture/Logo/Large/Khaki - Large.png" alt="Gnarly Cedar" />
             </div>
-            <div class="header__beers-label">BEERS<br>ON TAP</div>
+            <div class="header__right">
+                <div id="flightsRow" class="flightRow fadeSwap"></div>
+                <div class="header__info">
+                    <div id="headerQrCode"></div>
+                    <div class="header__wifi">
+                        WiFi: <strong>Gnarly Guest</strong><br>
+                        PW: <strong>staygnarly</strong>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <main class="page">
 
             <div id="houseGrid" class="grid fadeSwap"></div>
-            <div id="flightsRow" class="flightRow fadeSwap"></div>
 
             <div class="divider">
                 <div class="sectionTitle">GUEST TAPS</div>
@@ -46,12 +54,6 @@
             <div id="slideBody" class="slideBody"></div>
             <img id="slideImage" class="slideImage" alt="" />
         </div>
-    </div>
-
-    <!-- QR code (bottom-left corner) -->
-    <div class="qrCorner">
-        <div id="qrCode"></div>
-        <div class="qrLabel">SCAN TO VIEW MENU</div>
     </div>
 
     <!-- Logo (bottom-right corner) -->

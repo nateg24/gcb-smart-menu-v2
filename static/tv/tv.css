@@ -5,42 +5,44 @@
     --text: #fff2e8;
     --muted: #c8c8b0;
     --gold: #b7ad1e;
-
     --header-font: "Beiko", Impact, "Arial Black", sans-serif;
     --header-sub-font: "Karla", system-ui, sans-serif;
     --title-font: "Beiko", Impact, "Arial Black", sans-serif;
     --body-font: "Karla", system-ui, sans-serif;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
-    padding-top: 40px;
+    padding: 1.5vmin;
     background: var(--bg);
     color: var(--text);
     font-family: var(--body-font);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
+/* ── Header ─────────────────────────────────────────────── */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 24px 48px 16px;
-    width: 100%;
+    flex-shrink: 0;
     position: relative;
-    overflow: visible;
+    padding: 0.5vmin 0;
 }
 
 .header__beers-label {
     font-family: var(--header-font);
     font-weight: 800;
-    font-size: clamp(44px, 5.5vw, 72px);
+    font-size: 5.5vmin;
     line-height: 1;
     text-transform: uppercase;
-    letter-spacing: 5px;
+    letter-spacing: 3px;
     color: var(--text);
 }
 
@@ -55,105 +57,92 @@ body {
 }
 
 .header__logo img {
-    height: clamp(250px, 33vw, 400px);
+    height: 20vmin;
     width: auto;
-    margin-top: -10px;
 }
 
-.page {
-    padding: 10px 0 30px;
+/* ── Header right group: flights + QR ───────────────────── */
+.header__right {
+    display: flex;
+    align-items: center;
+    gap: 2vmin;
 }
 
+/* ── Header info: QR + WiFi ─────────────────────────────── */
+.header__info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5vmin;
+}
+
+.header__info canvas,
+.header__info img {
+    display: block;
+    width: 10vmin;
+    height: 10vmin;
+    border-radius: 3px;
+}
+
+.header__wifi {
+    font-family: var(--header-sub-font);
+    font-size: 1.6vmin;
+    color: var(--muted);
+    line-height: 1.6;
+    text-align: right;
+}
+
+.header__wifi strong { color: var(--text); }
+
+/* ── Canvas (fills remaining body height) ───────────────── */
 .menuCanvas {
-    position: relative;
-    width: 100%;
-    padding: 0 48px;
-    box-sizing: border-box;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
+/* ── Main page content ──────────────────────────────────── */
+.page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Beer grid ──────────────────────────────────────────── */
 .grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px 60px;
+    gap: 0.4vmin 3vw;
     align-items: start;
 }
 
-.col {
-    min-width: 0;
+#houseGrid {
+    flex: 1;
+    align-content: space-between;
 }
 
-.section {
-    margin-bottom: 26px;
-}
-
-.sectionTitle {
-    font-family: var(--title-font);
-    font-weight: 900;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    font-size: 42px;
-    color: var(--text);
-    margin: 16px 0 10px;
-    margin-top: 18px;
-    text-align: center;
-}
-
-#flightsRow {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 14px;
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 2px solid var(--muted);
-}
-
-.flightRow .left {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-.flightRow .label {
-    font-family: var(--title-font);
-    text-transform: uppercase;
-    font-size: 26px;
-    letter-spacing: 1px;
-    color: var(--text);
-}
-
-.flightRow .desc {
-    font-size: 14px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-.flightRow .price {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-}
+#guestGrid .name { font-size: 3.1vmin; }
+#guestGrid .desc { font-size: 1.8vmin; }
+#guestGrid .price { font-size: 1.8vmin; }
 
 .item {
-    margin-bottom: 14px;
+    margin-bottom: 0.8vmin;
 }
 
-.item--empty {
-    visibility: hidden;
-}
+.item--empty { visibility: hidden; }
 
 .itemTop {
     display: grid;
-    grid-template-columns: 1fr 40px;
-    gap: 14px;
+    grid-template-columns: 1fr auto;
+    gap: 0.5vmin;
     align-items: baseline;
 }
 
 .name {
     font-family: var(--title-font);
-    font-size: 32px;
+    font-size: 3.9vmin;
     letter-spacing: 1px;
     text-transform: uppercase;
     line-height: 1.05;
@@ -161,34 +150,35 @@ body {
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 0.5vmin;
 }
 
 .price {
     text-align: right;
-    font-size: 18px;
+    font-size: 2.3vmin;
     font-weight: 700;
     color: var(--text);
+    white-space: nowrap;
 }
 
 .desc {
-    margin-top: 4px;
-    font-size: 18px;
+    margin-top: 0.2vmin;
+    font-size: 2.3vmin;
     color: var(--muted);
     line-height: 1.25;
 }
 
+/* ── Badges ─────────────────────────────────────────────── */
 .badge {
     display: inline-block;
     font-family: var(--body-font);
-    font-size: 11px;
+    font-size: 1.2vmin;
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
-    padding: 2px 8px;
+    padding: 0.1vmin 0.5vmin;
     border-radius: 20px;
     vertical-align: middle;
-    margin-left: 8px;
     line-height: 1.6;
 }
 
@@ -199,82 +189,109 @@ body {
 
 .badge--featured {
     background: none;
-    border: none;
-    box-shadow: none;
     color: var(--text);
     font-family: var(--body-font);
     letter-spacing: 1px;
-    padding: 0 2px;
-    border-radius: 0;
+    padding: 0;
 }
 
-.badge--featured::before {
-    content: "★ ";
-}
+.badge--featured::before { content: "★ "; }
 
-.meta {
-    margin-top: 16px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.qrCorner {
-    position: fixed;
-    bottom: 28px;
-    left: 28px;
+/* ── Beer flights (in header, right of logo) ────────────── */
+#flightsRow {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    z-index: 10;
+    align-items: flex-start;
+    gap: 0.2vmin;
+    flex-shrink: 0;
 }
 
+.flightRow .flightTitle {
+    display: flex;
+    align-items: baseline;
+    gap: 1vmin;
+}
+
+.flightRow .label {
+    font-family: var(--title-font);
+    text-transform: uppercase;
+    font-size: 2.5vmin;
+    letter-spacing: 1px;
+    color: var(--text);
+}
+
+.flightRow .price {
+    font-size: 2.2vmin;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.flightRow .desc {
+    font-size: 1.3vmin;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+/* ── Guest taps divider ─────────────────────────────────── */
+.divider {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 2vmin;
+    padding: 0.6vmin 0;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+}
+
+.divider::before {
+    background: linear-gradient(to right, transparent, var(--muted));
+}
+
+.divider::after {
+    background: linear-gradient(to left, transparent, var(--muted));
+}
+
+.sectionTitle {
+    font-family: var(--title-font);
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-size: 2.8vmin;
+    color: var(--gold);
+    white-space: nowrap;
+}
+
+/* ── Status bar ─────────────────────────────────────────── */
+.meta {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1.4vmin;
+    flex-shrink: 0;
+}
+
+/* ── Logo corner ────────────────────────────────────────── */
 .logoCorner {
     position: fixed;
-    bottom: 28px;
-    right: 28px;
+    bottom: 1.5vmin;
+    right: 1.5vmin;
     z-index: -1;
     pointer-events: none;
 }
 
 .logoCorner img {
-    width: 200px;
+    width: 10vmin;
     height: auto;
     display: block;
-    opacity: .7;
+    opacity: .08;
 }
 
-.qrCorner #qrCode img,
-.qrCorner #qrCode canvas {
-    border-radius: 6px;
-    display: block;
-}
-
-.qrLabel {
-    font-family: var(--header-sub-font);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-}
-
-.header,
-.page {
-    width: 100%;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.divider {
-    margin: 26px 0 12px;
-}
-
-#guestGrid {
-    margin-bottom: 12px;
-}
-
+/* ── Fade swap ──────────────────────────────────────────── */
 .fadeSwap {
     opacity: 1;
     transition: opacity 220ms ease-in-out;
@@ -284,12 +301,7 @@ body {
     opacity: 0;
 }
 
-#houseGrid,
-#guestGrid {
-    min-height: 200px;
-}
-
-/* ── Slide overlay ───────────────────────────────────────── */
+/* ── Slide overlay ──────────────────────────────────────── */
 .slideView {
     position: fixed;
     inset: 0;
@@ -309,34 +321,34 @@ body {
 
 .slideInner {
     text-align: center;
-    padding: 80px;
-    max-width: 1000px;
+    padding: 6vmin;
+    max-width: 78vmin;
     transition: opacity 500ms ease, transform 500ms ease;
 }
 
 .slideTitle {
     font-family: var(--title-font);
-    font-size: clamp(52px, 7vw, 96px);
+    font-size: 7vmin;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 4px;
     color: var(--text);
     line-height: 1.05;
-    margin-bottom: 28px;
-    margin-top: 200px;
+    margin-bottom: 2vmin;
+    margin-top: 15vmin;
 }
 
 .slideBody {
     font-family: var(--body-font);
-    font-size: clamp(24px, 3vw, 40px);
+    font-size: 3vmin;
     color: var(--muted);
     line-height: 1.5;
 }
 
 .slideImage {
     max-width: 100%;
-    max-height: 380px;
-    margin-top: 36px;
+    max-height: 30vmin;
+    margin-top: 3vmin;
     object-fit: contain;
 }
 
@@ -351,7 +363,7 @@ body {
         print-color-adjust: exact !important;
     }
 
-    .qrCorner,
+    .header__info,
     .logoCorner,
     .meta {
         display: none !important;

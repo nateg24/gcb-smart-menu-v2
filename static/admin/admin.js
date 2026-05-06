@@ -1,17 +1,19 @@
 // DOM element references
-const meta = document.getElementById("meta");                   // status bar at the top
-const houseTapGridEl = document.getElementById("houseTapGrid"); // grid of house tap cells
-const guestTapGridEl = document.getElementById("guestTapGrid"); // grid of guest tap cells
-const beersEl = document.getElementById("beers");               // list of beer rows
-const beerFormEl = document.getElementById("beerForm");         // create/edit beer form container
-const newBeerBtn = document.getElementById("newBeerBtn");       // "New Beer" button
-const pinOverlay = document.getElementById("pinOverlay");       // full-screen PIN lock overlay
-const pinInput = document.getElementById("pinInput");           // PIN input field
-const pinError = document.getElementById("pinError");           // error message shown on wrong PIN
-const pinSubmit = document.getElementById("pinSubmit");         // "Unlock" button
-const slidesListEl = document.getElementById("slidesList");     // list of slide rows
-const slideFormEl = document.getElementById("slideForm");       // create/edit slide form container
-const newSlideBtn = document.getElementById("newSlideBtn");     // "New Slide" button
+const meta = document.getElementById("meta");                       // status bar at the top
+const houseTapGridEl = document.getElementById("houseTapGrid");     // grid of house tap cells
+const guestTapGridEl = document.getElementById("guestTapGrid");     // grid of guest tap cells
+const beersEl = document.getElementById("beers");                   // list of beer rows
+const beerFormEl = document.getElementById("beerForm");             // create/edit beer form container
+const newBeerBtn = document.getElementById("newBeerBtn");           // "New Beer" button
+const pinOverlay = document.getElementById("pinOverlay");           // full-screen PIN lock overlay
+const pinInput = document.getElementById("pinInput");               // PIN input field
+const pinError = document.getElementById("pinError");               // error message shown on wrong PIN
+const pinSubmit = document.getElementById("pinSubmit");             // "Unlock" button
+const slidesListEl = document.getElementById("slidesList");         // list of slide rows
+const slideFormEl = document.getElementById("slideForm");           // create/edit slide form container
+const newSlideBtn = document.getElementById("newSlideBtn");         // "New Slide" button
+const addTapBtn = document.getElementById("addTapBtn");             // "+ Add Tap" button
+const guestVisibleToggle = document.getElementById("guestVisibleToggle"); // guest section TV toggle
 
 // ── Auth helpers ──────────────────────────────────────────
 // Token is stored in sessionStorage so it's cleared when the tab is closed
@@ -154,7 +156,8 @@ function buildTapCells(taps, assignedIds) {
                     </option>`;
                 }).join("")}
             </select>
-            ${t.beer ? `<button class="btn btnSmall danger tapRemoveBtn" data-tap-remove="${t.id}">Remove</button>` : ""}
+            ${t.beer ? `<button class="btn btnSmall danger tapRemoveBtn" data-tap-remove="${t.id}">Unassign</button>` : ""}
+            <button class="btn btnSmall danger" data-tap-delete="${t.id}">Delete Tap</button>
         </div>`;
     }).join("");
 }
@@ -191,6 +194,30 @@ function bindTapAssign(container) {
                 menu = await api("/api/menu");
                 renderTapGrid();
                 initGridSorting();
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        });
+    });
+
+    container.querySelectorAll("[data-tap-delete]").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            const tapId = e.target.getAttribute("data-tap-delete");
+            if (!confirm("Delete this tap slot permanently?")) return;
+            try {
+                const token = getToken();
+                const res = await fetch(`/api/taps/${tapId}`, {
+                    method: "DELETE",
+                    headers: token ? { "Authorization": `Bearer ${token}` } : {}
+                });
+                if (res.status === 401) { sessionStorage.removeItem("adminToken"); showPin(); return; }
+                // 404 means it was already deleted (stale UI) — just reload
+                if (!res.ok && res.status !== 404) {
+                    const txt = await res.text().catch(() => "");
+                    alert(`Error deleting tap: ${res.status} ${txt}`);
+                    return;
+                }
+                await loadAll();
             } catch (err) {
                 alert("Error: " + err.message);
             }
@@ -357,6 +384,27 @@ document.getElementById("clearTapsBtn").addEventListener("click", async () => {
         await loadAll();
     } catch (err) {
         alert("Error: " + err.message);
+    }
+});
+
+addTapBtn.addEventListener("click", async () => {
+    try {
+        await api("/api/taps", { method: "POST", body: JSON.stringify({}) });
+        await loadAll();
+    } catch (err) {
+        alert("Error: " + err.message);
+    }
+});
+
+guestVisibleToggle.addEventListener("change", async () => {
+    try {
+        await api("/api/settings", {
+            method: "POST",
+            body: JSON.stringify({ key: "guest_section_visible", value: guestVisibleToggle.checked ? "1" : "0" })
+        });
+    } catch (err) {
+        alert("Error: " + err.message);
+        guestVisibleToggle.checked = !guestVisibleToggle.checked; // revert on failure
     }
 });
 
@@ -550,15 +598,19 @@ async function loadAll() {
     meta.textContent = "Loading…";
 
     try {
-        const [beersRes, menuRes, slidesRes] = await Promise.all([
+        const [beersRes, menuRes, slidesRes, settingsRes] = await Promise.all([
             api("/api/beers"),
             api("/api/menu"),
-            fetch("/api/slides").then(r => r.json())
+            fetch("/api/slides").then(r => r.json()),
+            fetch("/api/settings").then(r => r.json()),
         ]);
 
         beers = Array.isArray(beersRes) ? beersRes : [];
         menu = menuRes;
         slides = Array.isArray(slidesRes) ? slidesRes : [];
+
+        // Sync guest toggle to saved setting
+        guestVisibleToggle.checked = (settingsRes.guest_section_visible ?? "1") === "1";
 
         if (!menu || !Array.isArray(menu.taps)) {
             console.error("Bad /api/menu response:", menuRes);

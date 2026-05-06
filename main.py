@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Set
 
 from fastapi import Depends, FastAPI, File, Header, UploadFile, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.security import HTTPBearer
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -29,7 +30,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 # Absolute path to the directory containing this file — used to locate static assets
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="Smart Menu Backend v0")
+app = FastAPI(
+    title="Smart Menu Backend v0",
+    swagger_ui_init_oauth={},
+    openapi_tags=[],
+)
+_bearer_scheme = HTTPBearer(auto_error=False)
 
 # Serve everything under /static from the local "static" folder
 app.mount(
@@ -116,6 +122,13 @@ class Tap(Base):
     beer = relationship("Beer")
 
 
+# Key/value store for admin-configurable display settings
+class Setting(Base):
+    __tablename__ = "settings"
+    key = Column(String, primary_key=True)
+    value = Column(String, nullable=True)
+
+
 # -------------------------
 # Schemas
 # -------------------------
@@ -186,6 +199,7 @@ class MenuOut(BaseModel):
     version: int          # increments each time the menu changes (used to skip redundant re-renders)
     generated_at: datetime
     taps: List[TapOut]
+    show_guest_section: bool = True
 
 
 # Request body for changing a tap's status (ON / OUT / COMING_SOON)
@@ -252,6 +266,15 @@ class ReorderSlidesIn(BaseModel):
     order: List[int]
 
 
+class SettingIn(BaseModel):
+    key: str
+    value: str
+
+
+class CreateTapIn(BaseModel):
+    tap_number: Optional[int] = None  # auto-assigned if omitted
+
+
 # -------------------------
 # Realtime: WS hub
 # -------------------------
@@ -312,7 +335,10 @@ def admin_login(body: LoginIn):
     return {"token": token}
 
 
-def verify_token(authorization: str = Header(None)):
+def verify_token(
+    authorization: str = Header(None),
+    _creds=Depends(_bearer_scheme),
+):
     """FastAPI dependency — validates the Bearer token on protected routes."""
     if authorization and authorization.startswith("Bearer "):
         token = authorization[7:]
@@ -571,6 +597,11 @@ def seed_if_empty() -> None:
             for i in range(1, 25):
                 db.add(Tap(tap_number=i, display_order=i))
             db.commit()
+
+        # Seed default settings if not present
+        if not db.query(Setting).filter_by(key="guest_section_visible").first():
+            db.add(Setting(key="guest_section_visible", value="1"))
+            db.commit()
     finally:
         db.close()
 
@@ -635,8 +666,14 @@ def get_menu():
                 )
             )
 
+        setting = db.query(Setting).filter_by(key="guest_section_visible").first()
+        show_guest = setting is None or setting.value == "1"
+
         return MenuOut(
-            version=hub.version, generated_at=datetime.utcnow(), taps=out_taps
+            version=hub.version,
+            generated_at=datetime.utcnow(),
+            taps=out_taps,
+            show_guest_section=show_guest,
         )
     finally:
         db.close()
@@ -1110,6 +1147,84 @@ async def clear_all_taps(_=Depends(verify_token)):
     db = SessionLocal()
     try:
         db.query(Tap).update({Tap.beer_id: None, Tap.last_updated_at: datetime.utcnow()})
+        db.commit()
+        await hub.broadcast_menu_updated()
+        return {"ok": True}
+    finally:
+        db.close()
+
+
+@app.post("/api/taps", response_model=TapOut)
+async def create_tap(body: CreateTapIn, _=Depends(verify_token)):
+    """Add a new empty tap slot. tap_number is auto-assigned if not provided."""
+    db = SessionLocal()
+    try:
+        if body.tap_number is not None:
+            if db.query(Tap).filter_by(tap_number=body.tap_number).first():
+                raise HTTPException(status_code=409, detail=f"Tap number {body.tap_number} already exists")
+            tap_number = body.tap_number
+        else:
+            max_row = db.query(Tap.tap_number).order_by(Tap.tap_number.desc()).first()
+            tap_number = (max_row[0] + 1) if max_row else 1
+
+        max_order = db.query(Tap.display_order).order_by(Tap.display_order.desc()).first()
+        display_order = (max_order[0] + 1) if max_order else 0
+
+        tap = Tap(tap_number=tap_number, display_order=display_order, last_updated_at=datetime.utcnow())
+        db.add(tap)
+        db.commit()
+        db.refresh(tap)
+
+        await hub.broadcast_menu_updated()
+
+        return TapOut(
+            id=tap.id,
+            tap_number=tap.tap_number,
+            status=TapStatus(tap.status),
+            display_order=tap.display_order,
+            last_updated_at=tap.last_updated_at,
+            beer_id=None,
+            beer=None,
+        )
+    finally:
+        db.close()
+
+
+@app.delete("/api/taps/{tap_id}", status_code=204)
+async def delete_tap(tap_id: int, _=Depends(verify_token)):
+    db = SessionLocal()
+    try:
+        tap = db.query(Tap).filter_by(id=tap_id).first()
+        if not tap:
+            raise HTTPException(status_code=404, detail="Tap not found")
+        db.delete(tap)
+        db.commit()
+        await hub.broadcast_menu_updated()
+    finally:
+        db.close()
+
+
+@app.get("/api/settings")
+def get_settings():
+    """Return all admin settings as a flat key/value dict."""
+    db = SessionLocal()
+    try:
+        rows = db.query(Setting).all()
+        return {r.key: r.value for r in rows}
+    finally:
+        db.close()
+
+
+@app.post("/api/settings")
+async def update_setting(body: SettingIn, _=Depends(verify_token)):
+    """Create or update a single setting by key."""
+    db = SessionLocal()
+    try:
+        row = db.query(Setting).filter_by(key=body.key).first()
+        if row:
+            row.value = body.value
+        else:
+            db.add(Setting(key=body.key, value=body.value))
         db.commit()
         await hub.broadcast_menu_updated()
         return {"ok": True}

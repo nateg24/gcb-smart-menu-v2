@@ -29,11 +29,20 @@
         <section class="panel">
             <div class="panelHead">
                 <h2>In House Taps</h2>
-                <button class="btn danger" id="clearTapsBtn">Clear All Taps</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn" id="addTapBtn">+ Add Tap</button>
+                    <button class="btn danger" id="clearTapsBtn">Clear All Taps</button>
+                </div>
             </div>
             <div id="houseTapGrid" class="tapGrid"></div>
-            <h2 style="margin-top: 24px;">Guest Taps</h2>
-            <div id="guestTapGrid" class="tapGrid"></div>
+            <div class="panelHead" style="margin-top:24px;margin-bottom:0;">
+                <h2>Guest Taps</h2>
+                <label class="guestToggle" id="guestToggleLabel">
+                    <input type="checkbox" id="guestVisibleToggle" checked />
+                    Show on TV
+                </label>
+            </div>
+            <div id="guestTapGrid" class="tapGrid" style="margin-top:12px;"></div>
         </section>
         <section class="panel">
             <div class="panelHead">

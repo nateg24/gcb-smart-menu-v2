@@ -1,11 +1,26 @@
-// Scale the viewport so the full 1280px-wide menu design fits any screen width.
-// This runs immediately (IIFE) before any rendering happens.
-(function () {
-    const DESIGN_WIDTH = 1280;
-    const scale = Math.min(1, screen.width / DESIGN_WIDTH); // never zoom in, only zoom out
-    document.querySelector('meta[name="viewport"]').content =
-        `width=${DESIGN_WIDTH}, initial-scale=${scale.toFixed(3)}, minimum-scale=0.1, maximum-scale=3`;
-})();
+const DESIGN_WIDTH = 1280;
+
+// Scale .menuCanvas to fill the display using CSS transform.
+// Uses window.innerWidth/Height (actual rendered px) — reliable on all TV browsers.
+const CANVAS_PAD = 20;
+
+function scaleCanvas() {
+    const canvas = document.querySelector('.menuCanvas');
+    if (!canvas) return;
+    canvas.style.transform = '';
+    canvas.style.left = CANVAS_PAD + 'px';
+    canvas.style.top = CANVAS_PAD + 'px';
+    requestAnimationFrame(() => {
+        const naturalH = canvas.offsetHeight;
+        const scale = Math.min(
+            (window.innerWidth  - CANVAS_PAD * 2) / DESIGN_WIDTH,
+            (window.innerHeight - CANVAS_PAD * 2) / naturalH
+        );
+        canvas.style.transform = `scale(${scale})`;
+    });
+}
+
+window.addEventListener('resize', scaleCanvas);
 
 // DOM element references used throughout this file
 const meta = document.getElementById("meta");           // bottom status bar (version, timestamp)
@@ -18,22 +33,17 @@ const flightsRow = document.getElementById("flightsRow"); // static beer flights
 // The IP is hardcoded to the local network address of the server.
 const MENU_URL = "http://192.168.40.22:8000/menu";
 
-const qrEl = document.getElementById("qrCode");
+const qrEl = document.getElementById("headerQrCode");
 if (qrEl && typeof QRCode !== "undefined") {
+    const qrPx = Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.10);
     new QRCode(qrEl, {
         text: MENU_URL,
-        width: 110,
-        height: 110,
+        width: qrPx,
+        height: qrPx,
         colorDark: "#0a0a0a",
         colorLight: "#f2f2f2",
         correctLevel: QRCode.CorrectLevel.M
     });
-}
-
-// Hide QR corner in print mode
-if (new URLSearchParams(window.location.search).get("print") === "1") {
-    const qrCorner = document.querySelector(".qrCorner");
-    if (qrCorner) qrCorner.style.display = "none";
 }
 
 let ws = null;
@@ -113,30 +123,6 @@ function renderItems(items) {
   }).join("");
 }
 
-// Scale the beer section down so it never overflows one screen height.
-// Uses transform (doesn't affect layout flow) + a negative marginBottom to
-// collapse the phantom space transform leaves behind.
-function autoFitBeerGrid() {
-    const canvas = document.querySelector('.menuCanvas');
-    if (!canvas) return;
-
-    // Reset so we always measure the natural unscaled height
-    canvas.style.transform = '';
-    canvas.style.marginBottom = '';
-
-    requestAnimationFrame(() => {
-        const available = window.innerHeight;
-        const height = canvas.offsetHeight;
-        if (height <= available) return;
-
-        const scale = (available / height) * 0.98;
-        canvas.style.transform = `scale(${scale})`;
-        canvas.style.transformOrigin = 'top center';
-        canvas.style.marginBottom = `-${Math.ceil(height * (1 - scale))}px`;
-    });
-}
-
-window.addEventListener('resize', autoFitBeerGrid);
 
 // Re-render the entire menu display with fresh data from the API.
 function renderMenu(data) {
@@ -156,16 +142,16 @@ function renderMenu(data) {
   // Beer flights row is always shown with a fixed $13 price
   if (flightsRow) {
     flightsRow.innerHTML = `
-      <div class="left">
+      <div class="flightTitle">
         <div class="label">BEER FLIGHTS</div>
-        <div class="desc">SELECT 4 FROM THE TAP BEER LIST</div>
+        <div class="price">$13</div>
       </div>
-      <div class="price">13</div>
+      <div class="desc">SELECT 4 FROM THE TAP BEER LIST</div>
     `;
   }
 
-  // Only show the guest section and its divider if at least one guest tap has a beer
-  const hasGuest = guest.some(t => t.beer);
+  // Show guest section only if enabled in admin settings AND at least one guest tap has a beer
+  const hasGuest = data.show_guest_section && guest.some(t => t.beer);
   if (guestGrid) {
     guestGrid.innerHTML = renderItems(guest);
     guestGrid.style.display = hasGuest ? "" : "none";
@@ -174,7 +160,6 @@ function renderMenu(data) {
   const divider = document.querySelector(".divider");
   if (divider) divider.style.display = hasGuest ? "" : "none";
 
-  autoFitBeerGrid();
 }
 
 // Fetch the latest menu from the API and re-render if the version changed.
