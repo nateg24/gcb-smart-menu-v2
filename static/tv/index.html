@@ -11,18 +11,18 @@
 <body>
     <div class="menuCanvas">
         <header class="header">
-            <div class="header__beers-label">BEERS<br>ON TAP</div>
+            <div class="header__left">
+                <div class="header__beers-label">BEERS<br>ON TAP</div>
+                <div id="flightsRow" class="flightRow fadeSwap"></div>
+            </div>
             <div class="header__logo">
                 <img src="/static/assets/GNARLY CEDAR/Logos/Letterpress Texture/Logo/Large/Khaki - Large.png" alt="Gnarly Cedar" />
             </div>
-            <div class="header__right">
-                <div id="flightsRow" class="flightRow fadeSwap"></div>
-                <div class="header__info">
-                    <div id="headerQrCode"></div>
-                    <div class="header__wifi">
-                        WiFi: <strong>Gnarly Guest</strong><br>
-                        PW: <strong>staygnarly</strong>
-                    </div>
+            <div class="header__info">
+                <div id="headerQrCode"></div>
+                <div class="header__wifi">
+                    WiFi: <strong>Gnarly Guest</strong><br>
+                    PW: <strong>staygnarly</strong>
                 </div>
             </div>
         </header>
@@ -57,9 +57,11 @@
     </div>
 
     <!-- Logo (bottom-right corner) -->
+    <!--
     <div class="logoCorner">
         <img src="/static/assets/GNARLY CEDAR/Logos/Symbol/digital/detailed cream/full color/gnarlycedar-detailed-cream-full-color-rgb-450px-w-72ppi.png" alt="GCB Logo" />
     </div>
+    -->
 
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="/static/tv/tv.js"></script>

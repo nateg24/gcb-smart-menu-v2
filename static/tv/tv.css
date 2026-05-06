@@ -61,9 +61,10 @@ body {
     width: auto;
 }
 
-/* ── Header right group: flights + QR ───────────────────── */
-.header__right {
+/* ── Header left group: flights + label ─────────────────── */
+.header__left {
     display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 2vmin;
 }
